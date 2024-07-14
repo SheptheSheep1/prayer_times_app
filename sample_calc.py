@@ -1,3 +1,4 @@
+## sample calculations to serve as framework for other calculations
 import math
 LAT = 35 ## latitude
 LONG = 69 ## longitude
