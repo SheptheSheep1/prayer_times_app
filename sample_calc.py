@@ -13,7 +13,7 @@ ISHA_ANGLE = 18
 ## Calculate Julian days at local time
 Y = 2024
 M = 7
-D = 5
+D = 14
 H_jd = 16.000
 m = 0 
 s = 0
@@ -50,6 +50,7 @@ print("TT: %f"%TT)
 SA_FAJR = -(FAJR_ANGLE)
 SA_MAGHRIB = 0.8333 + (0.0347 * math.sqrt(H))
 SA_SUNRISE = SA_MAGHRIB
+print("SA_SUNRISE: ", SA_SUNRISE)
 SA_ASR = math.degrees(math.pow((1/math.tan(math.radians(SF + math.tan(math.radians(abs(DELTA - LAT)))))), -1))
 SA_ISHA = -(ISHA_ANGLE)
 
@@ -68,7 +69,7 @@ HA_SUNRISE = HA_MAGHRIB
 FAJR = TT - (HA_FAJR / 15)
 SUNRISE = TT - (HA_SUNRISE / 15)
 MAGHRIB = TT + (HA_MAGHRIB / 15)
-DHUHR = TT + 2
+DHUHR = TT + 2/60
 
 print("FAJR TIME: %f"%FAJR)
 print("SUNRISE TIME: %f"%SUNRISE)
