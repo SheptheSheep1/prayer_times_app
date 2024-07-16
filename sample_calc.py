@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 ## sample calculations to serve as framework for other calculations
 import math
 LAT = 35 ## latitude
@@ -63,8 +64,9 @@ cos_HA_SUNRISE = cos_HA_MAGHRIB
 
 HA_FAJR = math.degrees(math.acos(cos_HA_FAJR))
 print("HA_FAJR: %f"%HA_FAJR)
-HA_MAGHRIB = math.degrees(math.acos(cos_HA_SUNRISE))
+HA_MAGHRIB = math.degrees(math.acos(cos_HA_MAGHRIB))
 HA_SUNRISE = HA_MAGHRIB
+print("HA_SUNRISE: ", HA_SUNRISE)
 
 FAJR = TT - (HA_FAJR / 15)
 SUNRISE = TT - (HA_SUNRISE / 15)
