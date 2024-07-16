@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 ## sample calculations to serve as framework for other calculations
 import math
 LAT = 35 ## latitude
