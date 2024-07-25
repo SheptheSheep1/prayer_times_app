@@ -1,5 +1,7 @@
+from collections import namedtuple
 import time
 from datetime import datetime, timezone
+from geopy.geocoders import Nominatim
 
 def main():
     obj = PrayerTime()
@@ -20,9 +22,9 @@ def main():
         prayerTime = PrayerTime(month, day, year, utc_timezone)
     if getYesNo("Ma'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
         pass
-    elif getYesNo("Would you like to use an approximation based on your city? (requires an active internet connection)"):
+    elif getYesNo("Would you like to use an approximation based on your city? (requires an active internet connection, uses Nominatim API)"):
         city = str(input(("Enter your city/country (format: New York, USA)")))
-        pass
+        prayerTime.setCoordsbyCity(city)
     else:
         try:
             latitude = float(input("Enter your latitude coordinate (format: 12.34567): ").strip())
@@ -41,6 +43,9 @@ def getYesNo(question: str) -> bool:
         else:
             print("Please answer with 'yes' or 'no'")
 
+def getLocalUTCOffset(time) -> float:
+    return ((datetime.fromtimestamp(time).timestamp()) - datetime.fromtimestamp(time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
+
 class PrayerTime:
     __ts = time.time()
     __month = 0
@@ -49,23 +54,23 @@ class PrayerTime:
     __utc_offset = 0.0
     __latitude = 0.0
     __longitude = 0.0
+    geolocator = Nominatim(user_agent='maruf')
 
-    def __init__(self, month, day, year, utc_offset):
+    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().day, utc_offset=getLocalUTCOffset(time.time())):
         self.__month = month
         self.__day = day
         self.__year = year
         self.__utc_offset = utc_offset
-
-    def __init__(self):
-        self.__utc_offset = self.__getLocalUTCOffset()
-
-    def __getLocalUTCOffset(self) -> float:
-        self.__ts= time.time()
-        return ((datetime.fromtimestamp(self.__ts).timestamp()) - datetime.fromtimestamp(self.__ts, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
     
     def setGPScoordinates(self, latitude: int, longitude: int):
         self.__latitude = latitude
         self.__longitude = longitude
+    
+    def setCoordsbyCity(self, city: str):
+        location = self.geolocator.geocode(city)
+        latitude = location.latitude
+        longitude = location.longitude
+        print(latitude, longitude)
 
 if __name__ == "__main__":
     main()
