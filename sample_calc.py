@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+
 ## sample calculations to serve as framework for other calculations
 import math
 LAT = 35 ## latitude
 LONG = 69 ## longitude
-H = 1787 ## elevation
+H = 1787.0 ## elevation
 ## H = 0
 Z = 4.5 ## utc timezone
 SF = 2 ## Hanafi asr
@@ -14,7 +15,7 @@ ISHA_ANGLE = 18
 ## Calculate Julian days at local time
 Y = 2024
 M = 7
-D = 14
+D = 25
 H_jd = 16.000
 m = 0 
 s = 0
@@ -49,7 +50,7 @@ print("TT: %f"%TT)
 
 ## Calculate Sun altitudes
 SA_FAJR = -(FAJR_ANGLE)
-SA_MAGHRIB = 0.8333 + (0.0347 * math.sqrt(H))
+SA_MAGHRIB = -0.8333 - (0.0347 * math.sqrt(H))
 SA_SUNRISE = SA_MAGHRIB
 print("SA_SUNRISE: ", SA_SUNRISE)
 SA_ASR = math.degrees(math.pow((1/math.tan(math.radians(SF + math.tan(math.radians(abs(DELTA - LAT)))))), -1))
@@ -58,8 +59,9 @@ SA_ISHA = -(ISHA_ANGLE)
 ## Calculate hour angle
 cos_HA_FAJR = (math.sin(math.radians(SA_FAJR)) - math.sin(math.radians(LAT)) * math.sin(math.radians(DELTA))) / (math.cos(math.radians(LAT)) * math.cos(math.radians(DELTA)))
 print("cos_HA_FAJR: %f"%cos_HA_FAJR)
-cos_HA_MAGHRIB = (math.sin(math.radians(SA_SUNRISE))) - math.sin(math.radians(LAT)) * math.sin(math.radians(DELTA)) / (math.sin(math.radians(LAT)) * math.cos(math.radians(DELTA)))
+cos_HA_MAGHRIB = (math.sin(math.radians(SA_SUNRISE))) - math.sin(math.radians(LAT)) * math.sin(math.radians(DELTA)) / (math.cos(math.radians(LAT)) * math.cos(math.radians(DELTA)))
 cos_HA_SUNRISE = cos_HA_MAGHRIB
+print("cos_HA_SUNRISE: ", cos_HA_SUNRISE)
 
 
 HA_FAJR = math.degrees(math.acos(cos_HA_FAJR))
@@ -69,7 +71,7 @@ HA_SUNRISE = HA_MAGHRIB
 print("HA_SUNRISE: ", HA_SUNRISE)
 
 FAJR = TT - (HA_FAJR / 15)
-SUNRISE = TT - (HA_SUNRISE / 15)
+SUNRISE = TT - HA_SUNRISE / 15
 MAGHRIB = TT + (HA_MAGHRIB / 15)
 DHUHR = TT + 2/60
 
