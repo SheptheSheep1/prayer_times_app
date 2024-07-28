@@ -15,7 +15,7 @@ ISHA_ANGLE = 18
 ## Calculate Julian days at local time
 Y = 2024
 M = 7
-D = 25
+D = 28
 H_jd = 16.000
 m = 0 
 s = 0
@@ -53,7 +53,9 @@ SA_FAJR = -(FAJR_ANGLE)
 SA_MAGHRIB = -0.8333 - (0.0347 * math.sqrt(H))
 SA_SUNRISE = SA_MAGHRIB
 print("SA_SUNRISE: ", SA_SUNRISE)
-SA_ASR = math.degrees(math.pow((1/math.tan(math.radians(SF + math.tan(math.radians(abs(DELTA - LAT)))))), -1))
+#SA_ASR = math.degrees(math.pow((1/math.tan(math.radians(SF + math.tan(math.radians(abs(DELTA - LAT)))))), -1))
+SA_ASR = math.atan(1.0/(2.0+math.tan(math.radians(abs(DELTA - LAT)))))
+print(f"SA_ASR: {SA_ASR}")
 SA_ISHA = -(ISHA_ANGLE)
 
 ## Calculate hour angle
@@ -69,13 +71,18 @@ print("HA_FAJR: %f"%HA_FAJR)
 HA_MAGHRIB = math.degrees(math.acos(cos_HA_MAGHRIB))
 HA_SUNRISE = HA_MAGHRIB
 print("HA_SUNRISE: ", HA_SUNRISE)
+cos_HA_ASR = (math.sin(math.radians(SA_ASR))) - math.sin(math.radians(LAT)) * math.sin(math.radians(DELTA)) / (math.cos(math.radians(LAT)) * math.cos(math.radians(DELTA)))
+HA_ASR = math.degrees(math.acos(cos_HA_ASR))
+print(f"HA_ASR: {HA_ASR}")
 
 FAJR = TT - (HA_FAJR / 15)
 SUNRISE = TT - HA_SUNRISE / 15
 MAGHRIB = TT + (HA_MAGHRIB / 15)
 DHUHR = TT + 2/60
+ASR = TT + HA_ASR / 15
 
 print("FAJR TIME: %f"%FAJR)
 print("SUNRISE TIME: %f"%SUNRISE)
 print("DHUHR TIME: %f"%DHUHR)
 print("MAGHRIB TIME: %f"%MAGHRIB)
+print("ASR TIME: %f"%ASR)

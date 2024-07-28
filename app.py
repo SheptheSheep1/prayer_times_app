@@ -39,7 +39,7 @@ def main():
         prayerTime.ASR_METHOD = 2
     else: prayerTime.ASR_METHOD = 1
 
-    print(prayerTime.printPrayerTimes())
+    prayerTime.printPrayerTimes()
 
 def getYesNo(question: str) -> bool:
     while True:
@@ -57,32 +57,24 @@ def getLocalUTCOffset(time) -> float:
 
 class PrayerTime:
     ASR_METHOD = 1
-    CalcMethod = namedtuple("CalcMethod", ["name", "fajr_angle", "isha_angle", "fixed"])
+    #CalcMethod = namedtuple("CalcMethod", ["name", "fajr_angle", "isha_angle", "fixed"])
     __ts = time.time()
     __month = 0
     __day = 0.0
     __year = 0
     __utc_offset = 0.0
-    __latitude = 0.0
-    __longitude = 0.0
     __geolocator = Nominatim(user_agent='maruf')
     __daysDecimal = 0.0
-    CALC
 
     class CalcMethod:
-        __name = ''
-        __fajr_angle = 0.0
-        __isha_angle = 0.0
-        __fixed = False
-        def __init__(name, fajr_angle, isha_angle, fixed):
-            self.__name = name
-            self.__fajr_angle = fajr_angle
-            self.__isha_angle = isha_angle
-            self.__fixed = fixed
+        def __init__(self, name, fajr_angle, isha_angle, fixed):
+            self.name = name
+            self.fajr_angle = fajr_angle
+            self.isha_angle = isha_angle
+            self.fixed = fixed
         
-        def __str__():
-            return (name)
-
+        def __str__(self):
+            return (self.name)
     def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time())):
         self.__month = month
         self.__day = day
@@ -90,14 +82,14 @@ class PrayerTime:
         self.__utc_offset = utc_offset
         self.__daysDecimal = day + 0.5
     
-    def setGPScoordinates(self, latitude: int, longitude: int):
+    def setGPScoordinates(self, latitude: float, longitude: float):
         self.__latitude = latitude
         self.__longitude = longitude
     
     def setCoordsbyCity(self, city: str):
         location = self.__geolocator.geocode(city)
         self.__latitude = location.latitude
-        longitude = location.longitude
+        self.__longitude = location.longitude
 
     def promptCalcMethod(self):
         print(f'''
@@ -120,49 +112,49 @@ class PrayerTime:
               (17) Tehran (Institute of Geophysics, University of Tehran) Fajr: 17.7\N{DEGREE SIGN} Isha: 14\N{DEGREE SIGN}
               (18) Jafari (Shia Ithna Ashari) Fajr: 16\N{DEGREE SIGN} Isha: 14\N{DEGREE SIGN}
               ''')
-        answer = input("\nChoose your calculation method: ").strip()
+        answer = int(input("\nChoose your calculation method: ").strip())
         # records calculation method as namedtuple 'CalcMethod' in order to maintain actual name of method as opposed just angles
         match answer:
             case 1:
-                CALCULATION_METHOD = CalcMethod("MWL", 18.0, 17.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("MWL", 18.0, 17.0, False)
             case 2:
-                CALCULATION_METHOD = CalcMethod("ISNA", 15.0, 15.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("ISNA", 15.0, 15.0, False)
             case 3:
-                CALCULATION_METHOD = CalcMethod("Umm al-Qura", 18.5, 90, True)
+                self.CALCULATION_METHOD = self.CalcMethod("Umm al-Qura", 18.5, 90, True)
             case 4:
-                CALCULATION_METHOD = CalcMethod("Gulf", 19.5, 90, True)
+                self.CALCULATION_METHOD = self.CalcMethod("Gulf", 19.5, 90, True)
             case 5:
-                CALCULATION_METHOD = CalcMethod("Algerian", 18.0, 17.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("Algerian", 18.0, 17.0, False)
             case 6:
-                CALCULATION_METHOD = CalcMethod("Karachi", 18.0, 18.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("Karachi", 18.0, 18.0, False)
             case 7:
-                CALCULATION_METHOD = CalcMethod("Diyanet", 18.0, 17.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("Diyanet", 18.0, 17.0, False)
             case 8:
-                CALCULATION_METHOD = CalcMethod("Egypt", 19.5, 17.5, False)
+                self.CALCULATION_METHOD = self.CalcMethod("Egypt", 19.5, 17.5, False)
             case 9:
-                CALCULATION_METHOD = CalcMethod("EgyptBis", 20.0, 18.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("EgyptBis", 20.0, 18.0, False)
             case 10:
-                CALCULATION_METHOD = CalcMethod("Kemenag", 20.0, 18.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("Kemenag", 20.0, 18.0, False)
             case 11:
-                CALCULATION_METHOD = CalcMethod("MUIS", 20.0, 18.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("MUIS", 20.0, 18.0, False)
             case 12: 
-                CALCULATION_METHOD = CalcMethod("JAKIM", 20.0, 18.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("JAKIM", 20.0, 18.0, False)
             case 13:
-                CALCULATION_METHOD = CalcMethod("UDIF", 12.0, 12.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("UDIF", 12.0, 12.0, False)
             case 14:
-                CALCULATION_METHOD = CalcMethod("France15", 15.0, 15.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("France15", 15.0, 15.0, False)
             case 15:
-                CALCULATION_METHOD = CalcMethod("France18", 18.0, 18.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("France18", 18.0, 18.0, False)
             case 16:
-                CALCULATION_METHOD = CalcMethod("Tunisia", 18.0, 18.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("Tunisia", 18.0, 18.0, False)
             case 17:
-                CALCULATION_METHOD = CalcMethod("Tehran", 17.7, 14.0, False)
+                self.CALCULATION_METHOD = self.CalcMethod("Tehran", 17.7, 14.0, False)
             case 18:
-                CALCULATION_METHOD = CalcMethod("Jafari", 16.0, 14.0, False)
-            #case _:
-                #self.CALCULATION_METHOD = self.CalcMethod("MWL", 18.0, 17.0, False)
-        print(answer)
-        print(f"{CALCULATION_METHOD.name} chosen")
+                self.CALCULATION_METHOD = self.CalcMethod("Jafari", 16.0, 14.0, False)
+            case _:
+                self.CALCULATION_METHOD = self.CalcMethod("booh", 18.0, 17.0, False)
+        print(self.CALCULATION_METHOD)
+        print(f"{self.CALCULATION_METHOD.name} chosen")
 
     # calculates Julian days in decimal from a given gregorian date
     def __calcJD(self, year, month, day) -> float:
@@ -238,18 +230,23 @@ class PrayerTime:
         L0 = 280.46607 + 36000.7698*U
         ET1000 = -(1789 + 237*U) * math.sin(math.radians(L0)) - (7146 - 62*U) * math.cos(math.radians(L0)) + (9934 - 14*U) * math.sin(math.radians(2*L0)) - (29 + 5*U) * math.cos(math.radians(2*L0)) + (74 + 10*U) * math.sin(math.radians(3*L0)) + (320 - 4*U) * math.cos(math.radians(3*L0)) - 212*math.sin(math.radians(4*L0))
         ET = ET1000 / 1000
+        print(f"U: {U}")
+        print(f"L0: {L0}")
         return ET
 
     def __calcSunTransitTime(self, utc_offset: float, longitude: float, eqTime: float) -> float:
         # calculates sun transit time
         TT = 12.0 + utc_offset - (longitude / 15.0) - (eqTime / 60.0)
+        print(utc_offset, longitude, eqTime)
         return TT
 
     def __calcSunAltitudes(self, fajr_angle: float, isha_angle: float, elevation: int, asr_method: int, sunDelta: float, latitude: float) -> dict:
         SA_FAJR = -(fajr_angle)
         SA_MAGHRIB = -0.8333 - (0.0347 * math.sqrt(elevation))
         SA_SUNRISE = SA_MAGHRIB
-        SA_ASR = math.degrees(math.pow((1/math.tan(math.radians(asr_method + math.tan(math.radians(abs(sunDelta - latitude)))))), -1))
+        #SA_ASR = math.degrees(math.pow((1/math.tan(math.radians(asr_method + math.tan(math.radians(abs(sunDelta - latitude)))))), -1))
+        SA_ASR = math.atan(1/(self.ASR_METHOD+math.tan(math.radians(abs(sunDelta - latitude)))))
+        print(f"SA_ASR: {SA_ASR}")
         SA_ISHA = -(isha_angle)
         sunAltitudes = dict(
                 fajr = SA_FAJR,
@@ -263,6 +260,7 @@ class PrayerTime:
     def __calcHourAngles(self, sunAltitudes: dict, latitude: float, sunDelta: float) -> dict:
         cos_HA_FAJR = (math.sin(math.radians(sunAltitudes["fajr"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
         cos_HA_ASR = (math.sin(math.radians(sunAltitudes["asr"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
+        print(f"cos_HA_ASR = {cos_HA_ASR}")
         cos_HA_MAGHRIB = (math.sin(math.radians(sunAltitudes["sunrise"]))) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta)) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
         cos_HA_SUNRISE = cos_HA_MAGHRIB
         cos_HA_ISHA = (math.sin(math.radians(sunAltitudes["isha"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
@@ -285,19 +283,20 @@ class PrayerTime:
 
     def __calcPrayerTimes(self) -> dict:
         JD = self.__calcJD(self.__year, self.__month, self.__daysDecimal)
-        #print(f"JD: {JD}")
+        print(f"JD: {JD}")
         T, DELTA = self.__calcSunDeclination(JD)
-        #print(f"T: {T}")
-        #print(f"DELTA: {DELTA}")
+        print(f"T: {T}")
+        print(f"DELTA: {DELTA}")
         ET = self.__calcEqTime(JD)
-        #print(f"ET: {ET}")
+        print(f"ET: {ET}")
         TT = self.__calcSunTransitTime(self.__utc_offset, self.__longitude, ET)
-        #print(f"TT: {TT}")
+        print(f"TT: {TT}")
         sunAltitudes = self.__calcSunAltitudes(self.CALCULATION_METHOD.fajr_angle, self.CALCULATION_METHOD.isha_angle, 0, self.ASR_METHOD, DELTA, self.__latitude)
-        #print(f"sunAltitudes: {sunAltitudes}")
+        print(f"sunAltitudes: {sunAltitudes}")
         hourAngles = self.__calcHourAngles(sunAltitudes, self.__latitude, DELTA)
-        #print(f"hourAngles: {hourAngles}")
-        #print(f"{self.__month}/{self.__day}/{self.__year}")
+        print(f"hourAngles: {hourAngles}")
+        print(f"{self.__month}/{self.__day}/{self.__year}")
+        print(f"asr: {self.ASR_METHOD}")
 
         FAJR = TT - (hourAngles["fajr"] / 15)
         SUNRISE = TT - hourAngles["sunrise"] / 15
@@ -305,7 +304,8 @@ class PrayerTime:
         ASR = TT + hourAngles["asr"] / 15
         MAGHRIB = TT + (hourAngles["maghrib"] / 15)
         ISHA = TT + hourAngles["isha"] / 15
-
+        print(ISHA)
+        
         prayerTimes = dict (
                 fajr= self.convertHrs(FAJR),
                 sunrise= self.convertHrs(SUNRISE),
