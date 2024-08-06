@@ -306,7 +306,14 @@ class PrayerTime:
         print(f"asr: {self.ASR_METHOD}")
         
         #asr_time = noon + timedelta(minutes_after_noon)
-        
+
+        # compute asr
+        G = self.darccot(2+self.dtan(abs(self.__latitude-DELTA)))
+        Z = 12.0 - ET
+        V = 1/15 * self.darccos((-self.dsin(G) - self.dsin(DELTA) * self.dsin(self.__latitude)) / (self.dcos(DELTA) * self.dcos(self.__latitude)))
+        print(f"Z: {Z}")
+        print(f"V: {V}")
+
         FAJR = TT - (hourAngles["fajr"] / 15)
         SUNRISE = TT - hourAngles["sunrise"] / 15
         DHUHR = TT + 2/60
@@ -348,7 +355,26 @@ class PrayerTime:
     def getGPSCoordinates(self) -> tuple:
         return self.__latitude, self.__longitude
     
-    # def darccot(self, )
+    def darccot(self, x: float) -> float:
+        return self.rtd(math.atan(1/x))
+
+    def rtd(self, radians: float) -> float:
+        return (radians * 180.0) / math.pi
+    
+    def dtr(self, degrees: float) -> float:
+        return (degrees * math.pi) / 180.0
+
+    def dtan(self, d: float) -> float:
+        return math.tan(self.dtr(d))
+
+    def dsin(self, d: float) -> float:
+        return math.sin(self.dtr(d))
+
+    def dcos(self, d: float) -> float:
+        return math.cos(self.dtr(d))
+
+    def darccos(self, x: float) -> float:
+        return self.rtd(math.acos(x))
 
 if __name__ == "__main__":
     main()
