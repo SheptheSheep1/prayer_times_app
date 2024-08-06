@@ -1,45 +1,52 @@
 import math
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import namedtuple
 
 from geopy.geocoders import Nominatim
 
 def main():
+    debug = False
     # print(os.environ['LATITUDE'])
     print("\n-------------------------------------")
     print("-------------------------------------")
     print("----------Welcome to Ma'ruf----------")
     print("-------------------------------------")
     print("-------------------------------------\n")
-    if getYesNo("Would you like to use your system date and time?"):
-        prayerTime = PrayerTime()
-    else:
-        year = int(input("Enter the gregorian year in AD (format: '2024'): ").strip())
-        month = int(input("Enter the gregorian month (format: '01'): ").strip())
-        day = int(input("Enter the day of the month (format: '09'): ").strip())
-        utc_timezone = float(input("Enter your timezone's offset from UTC (format: '11.5'): ").strip())
-        prayerTime = PrayerTime(month, day, year, utc_timezone)
-    if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
-        pass
-    elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
-        city = str(input(("Enter your city/country (format: New York, USA): ")))
-        prayerTime.setCoordsbyCity(city)
-    else:
-        try:
-            latitude = float(input("Enter your latitude coordinate (format: 12.34567): ").strip())
-            longitude = float(input("Enter your longitude coordinate (format: 12.34567): ").strip())
-            prayerTime.setGPScoordinates(latitude, longitude)
-            print(f"{prayerTime.getGPSCoordinates()} set")
-        except ValueError:
-            print("Please enter a number in the given format")
-    prayerTime.promptCalcMethod()
-    if getYesNo("Would you like to use the Hanafi asr calculation method?"):
-        prayerTime.ASR_METHOD = 2
-    else: prayerTime.ASR_METHOD = 1
-
-    prayerTime.printPrayerTimes()
+    print('''
+          What would you like to do?
+          (1) Calculate Prayer Times
+          ''')
+    modeInput = int(input("Enter answer here (format: 5): ").strip())
+    match modeInput:
+        case 1: # calculate prayer times
+            if getYesNo("Would you like to use your system date and time?"):
+                prayerTime = PrayerTime()
+            else:
+                year = int(input("Enter the gregorian year in AD (format: '2024'): ").strip())
+                month = int(input("Enter the gregorian month (format: '01'): ").strip())
+                day = int(input("Enter the day of the month (format: '09'): ").strip())
+                utc_timezone = float(input("Enter your timezone's offset from UTC (format: '11.5'): ").strip())
+                prayerTime = PrayerTime(month, day, year, utc_timezone)
+            if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
+                pass
+            elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
+                city = str(input(("Enter your city/country (format: New York, USA): ")))
+                prayerTime.setCoordsbyCity(city)
+            else:
+                try:
+                    latitude = float(input("Enter your latitude coordinate (format: 12.34567): ").strip())
+                    longitude = float(input("Enter your longitude coordinate (format: 12.34567): ").strip())
+                    prayerTime.setGPScoordinates(latitude, longitude)
+                    print(f"{prayerTime.getGPSCoordinates()} set")
+                except ValueError:
+                    print("Please enter a number in the given format")
+            prayerTime.promptCalcMethod()
+            if getYesNo("Would you like to use the Hanafi asr calculation method?"):
+                prayerTime.ASR_METHOD = 2
+            else: prayerTime.ASR_METHOD = 1
+            prayerTime.printPrayerTimes()
 
 def getYesNo(question: str) -> bool:
     while True:
@@ -297,7 +304,9 @@ class PrayerTime:
         print(f"hourAngles: {hourAngles}")
         print(f"{self.__month}/{self.__day}/{self.__year}")
         print(f"asr: {self.ASR_METHOD}")
-
+        
+        #asr_time = noon + timedelta(minutes_after_noon)
+        
         FAJR = TT - (hourAngles["fajr"] / 15)
         SUNRISE = TT - hourAngles["sunrise"] / 15
         DHUHR = TT + 2/60
@@ -305,6 +314,7 @@ class PrayerTime:
         MAGHRIB = TT + (hourAngles["maghrib"] / 15)
         ISHA = TT + hourAngles["isha"] / 15
         print(ISHA)
+        #print(f"Pos ASR: {asr_time}")
         
         prayerTimes = dict (
                 fajr= self.convertHrs(FAJR),
@@ -317,12 +327,13 @@ class PrayerTime:
         return prayerTimes
 
     def printPrayerTimes(self):
-        print(f"FAJR: {self.__calcPrayerTimes()["fajr"].strftime("%I:%M:%S %p")}")
-        print(self.__calcPrayerTimes()["sunrise"].strftime("%I:%M:%S %p"))
-        print(self.__calcPrayerTimes()["dhuhr"].strftime("%I:%M:%S %p"))
-        print(self.__calcPrayerTimes()["asr"].strftime("%I:%M:%S %p"))
-        print(self.__calcPrayerTimes()["maghrib"].strftime("%I:%M:%S %p"))
-        print(self.__calcPrayerTimes()["isha"].strftime("%I:%M:%S %p"))
+        prayerTimes = self.__calcPrayerTimes()
+        print(f"FAJR: {prayerTimes["fajr"].strftime("%I:%M:%S %p")}")
+        print(f"SUNRISE: {prayerTimes["sunrise"].strftime("%I:%M:%S %p")}")
+        print(f"{prayerTimes["dhuhr"].strftime("%I:%M:%S %p")}")
+        print(f"{prayerTimes["asr"].strftime("%I:%M:%S %p")}")
+        print(f"{prayerTimes["maghrib"].strftime("%I:%M:%S %p")}")
+        print(f"{prayerTimes["isha"].strftime("%I:%M:%S %p")}")
 
     
     def convertHrs(self, decimal) -> datetime:
@@ -336,6 +347,8 @@ class PrayerTime:
 
     def getGPSCoordinates(self) -> tuple:
         return self.__latitude, self.__longitude
+    
+    # def darccot(self, )
 
 if __name__ == "__main__":
     main()
