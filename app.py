@@ -1,8 +1,5 @@
 import math
-import os
-import time
 from datetime import datetime, timezone, timedelta
-from collections import namedtuple
 
 from geopy.geocoders import Nominatim
 
@@ -74,7 +71,7 @@ class PrayerTime:
     __daysDecimal = 0.0
 
     class CalcMethod:
-        def __init__(self, name, fajr_angle, isha_angle, fixed):
+        def __init__(self, name: str, fajr_angle: float, isha_angle: float, fixed: bool):
             self.name = name
             self.fajr_angle = fajr_angle
             self.isha_angle = isha_angle
@@ -193,7 +190,7 @@ class PrayerTime:
         --------
         Convert 6 a.m., February 17, 1985 to Julian Day
         
-        >>> date_to_jd(1985,2,17.25)
+        date_to_jd(1985,2,17.25)
         2446113.75
         
         """
@@ -331,6 +328,8 @@ class PrayerTime:
                 maghrib= self.convertHrs(MAGHRIB),
                 isha= self.convertHrs(ISHA)
                 )
+
+        print(DHUHR)
         return prayerTimes
 
     def printPrayerTimes(self):

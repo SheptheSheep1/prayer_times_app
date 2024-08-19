@@ -2,24 +2,24 @@
 
 ## sample calculations to serve as framework for other calculations
 import math
-LAT = 35 ## latitude
-LONG = 69 ## longitude
+LAT = 33.4912 ## latitude
+LONG = -111.926018 ## longitude
 H = 1787.0 ## elevation
 ## H = 0
 Z = 4.5 ## utc timezone
 SF = 2 ## Hanafi asr
 ## University of Islamic Sciences, Karachi Angle for Afghanistan
-FAJR_ANGLE = 18 
-ISHA_ANGLE = 18
+FAJR_ANGLE = 15
+ISHA_ANGLE = 15
 
 ## Calculate Julian days at local time
 Y = 2024
-M = 7
-D = 28
+M = 8
+D = 14
 H_jd = 16.000
 m = 0 
 s = 0
-Z = 4.5
+Z = -7.0 
 
 A = int(Y/100)
 
