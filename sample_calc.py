@@ -2,8 +2,8 @@
 
 ## sample calculations to serve as framework for other calculations
 import math
-LAT = 33.4912 ## latitude
-LONG = -111.926018 ## longitude
+LAT = 33.4306 ## latitude
+LONG = -111.9256 ## longitude
 H = 1787.0 ## elevation
 ## H = 0
 Z = 4.5 ## utc timezone
@@ -14,8 +14,8 @@ ISHA_ANGLE = 15
 
 ## Calculate Julian days at local time
 Y = 2024
-M = 8
-D = 14
+M = 9
+D = 21
 H_jd = 16.000
 m = 0 
 s = 0

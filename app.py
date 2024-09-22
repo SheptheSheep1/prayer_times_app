@@ -1,6 +1,6 @@
 import math
-from datetime import datetime, timezone, timedelta
-
+from datetime import datetime, timezone
+import time
 from geopy.geocoders import Nominatim
 
 def main():
@@ -60,7 +60,7 @@ def getLocalUTCOffset(time) -> float:
 
 
 class PrayerTime:
-    ASR_METHOD = 1
+    ASR_METHOD: int = 1
     #CalcMethod = namedtuple("CalcMethod", ["name", "fajr_angle", "isha_angle", "fixed"])
     __ts = time.time()
     __month = 0
@@ -94,6 +94,7 @@ class PrayerTime:
         location = self.__geolocator.geocode(city)
         self.__latitude = location.latitude
         self.__longitude = location.longitude
+        print(f"Location set to: {location.address} ({location.latitude}, {location.longitude})")
 
     def promptCalcMethod(self):
         print(f'''
@@ -227,6 +228,7 @@ class PrayerTime:
     def __calcSunDeclination(self, JD: float) -> float:
         T = (2 * math.pi * (JD - 2451545)) / 365.25
         DELTA = 0.37877 + (23.264 * math.sin(math.radians((57.297*T) - 79.547))) + (0.3812 * math.sin(math.radians((2*57.297*T) - 82.682))) + (0.17132 * math.sin(math.radians((3*57.297*T) - 59.722)))
+        print(f"DELTA: {DELTA}")
         return (T, DELTA)
 
     def __calcEqTime(self, JD: float) -> float:

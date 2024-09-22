@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "93ad7f1d986e9bf95bad76fe97a5f9ef2200cec8249a617acc03e23f91c6f7c9"
+            "sha256": "a405182bbf74ba8f25f1e86b9b1a0f36e8a613e1c2d44289cc308f250be54f35"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,6 +16,15 @@
         ]
     },
     "default": {
+        "astral": {
+            "hashes": [
+                "sha256:9b7c3b412e9e69d172cfb24be0e6addcc9f1bd01a28db8bebe66d75ccc533d88",
+                "sha256:cb7b49a3f0d4c64ae666be131276d2a3226134c598db10e672028cf8ff855f83"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.7' and python_version < '4.0'",
+            "version": "==3.2"
+        },
         "geographiclib": {
             "hashes": [
                 "sha256:6b7225248e45ff7edcee32becc4e0a1504c606ac5ee163a5656d482e0cd38734",
