@@ -40,9 +40,16 @@ def main():
                 except ValueError:
                     print("Please enter a number in the given format")
             prayerTime.promptCalcMethod()
-            if getYesNo("Would you like to use the Hanafi asr calculation method?"):
+            if getYesNo("Would you like to use the Hanafi asr calculation method (2x Shadow Length)?"):
                 prayerTime.ASR_METHOD = 2
             else: prayerTime.ASR_METHOD = 1
+            method = ""
+            if (prayerTime.ASR_METHOD == 1):
+                method = "1 Shadow Length (Shafi'i, Maliki, Hanbali)"
+            elif (prayerTime.ASR_METHOD == 2):
+                method = "2 Shadow Length (Hanafi)"
+            print(f"Asr juristic method set to: {method}\n")
+            print("Calculating prayer times...\n")
             prayerTime.printPrayerTimes()
 
 def getYesNo(question: str) -> bool:
@@ -158,8 +165,7 @@ class PrayerTime:
                 self.CALCULATION_METHOD = self.CalcMethod("Jafari", 16.0, 14.0, False)
             case _:
                 self.CALCULATION_METHOD = self.CalcMethod("booh", 18.0, 17.0, False)
-        print(self.CALCULATION_METHOD)
-        print(f"{self.CALCULATION_METHOD.name} chosen")
+        print(f"{self.CALCULATION_METHOD.name} chosen\n")
 
     # calculates Julian days in decimal from a given gregorian date
     def __calcJD(self, year, month, day) -> float:
@@ -225,10 +231,9 @@ class PrayerTime:
         
         return jd
     
-    def __calcSunDeclination(self, JD: float) -> float:
+    def __calcSunDeclination(self, JD: float) -> tuple:
         T = (2 * math.pi * (JD - 2451545)) / 365.25
         DELTA = 0.37877 + (23.264 * math.sin(math.radians((57.297*T) - 79.547))) + (0.3812 * math.sin(math.radians((2*57.297*T) - 82.682))) + (0.17132 * math.sin(math.radians((3*57.297*T) - 59.722)))
-        print(f"DELTA: {DELTA}")
         return (T, DELTA)
 
     def __calcEqTime(self, JD: float) -> float:
@@ -236,14 +241,11 @@ class PrayerTime:
         L0 = 280.46607 + 36000.7698*U
         ET1000 = -(1789 + 237*U) * math.sin(math.radians(L0)) - (7146 - 62*U) * math.cos(math.radians(L0)) + (9934 - 14*U) * math.sin(math.radians(2*L0)) - (29 + 5*U) * math.cos(math.radians(2*L0)) + (74 + 10*U) * math.sin(math.radians(3*L0)) + (320 - 4*U) * math.cos(math.radians(3*L0)) - 212*math.sin(math.radians(4*L0))
         ET = ET1000 / 1000
-        print(f"U: {U}")
-        print(f"L0: {L0}")
         return ET
 
     def __calcSunTransitTime(self, utc_offset: float, longitude: float, eqTime: float) -> float:
         # calculates sun transit time
         TT = 12.0 + utc_offset - (longitude / 15.0) - (eqTime / 60.0)
-        print(utc_offset, longitude, eqTime)
         return TT
 
     def __calcSunAltitudes(self, fajr_angle: float, isha_angle: float, elevation: int, asr_method: int, sunDelta: float, latitude: float) -> dict:
@@ -252,7 +254,6 @@ class PrayerTime:
         SA_SUNRISE = SA_MAGHRIB
         #SA_ASR = math.degrees(math.pow((1/math.tan(math.radians(asr_method + math.tan(math.radians(abs(sunDelta - latitude)))))), -1))
         SA_ASR = math.atan(1/(self.ASR_METHOD+math.tan(math.radians(abs(sunDelta - latitude)))))
-        print(f"SA_ASR: {SA_ASR}")
         SA_ISHA = -(isha_angle)
         sunAltitudes = dict(
                 fajr = SA_FAJR,
@@ -266,7 +267,6 @@ class PrayerTime:
     def __calcHourAngles(self, sunAltitudes: dict, latitude: float, sunDelta: float) -> dict:
         cos_HA_FAJR = (math.sin(math.radians(sunAltitudes["fajr"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
         cos_HA_ASR = (math.sin(math.radians(sunAltitudes["asr"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
-        print(f"cos_HA_ASR = {cos_HA_ASR}")
         cos_HA_MAGHRIB = (math.sin(math.radians(sunAltitudes["sunrise"]))) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta)) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
         cos_HA_SUNRISE = cos_HA_MAGHRIB
         cos_HA_ISHA = (math.sin(math.radians(sunAltitudes["isha"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
@@ -287,40 +287,42 @@ class PrayerTime:
 
         return hourAngles
 
+    def __calcAsrDiff(self, jd, Lat) -> float:
+        d = jd-2451545.0
+
+        g = 357.529 + 0.98560028* d
+        q = 280.459 + 0.98564736* d
+        L = q + 1.915* math.sin(math.radians(g)) + 0.020* math.sin(math.radians(2*g))
+        
+        e = 23.439 - 0.00000036* d
+        
+        D = math.degrees(math.asin(math.sin(math.radians(e))* math.sin(math.radians(L))))  # declination of the Sun
+        
+        top = math.sin(math.radians(math.degrees(self.arccot(2+math.tan(math.radians(Lat-D))))-math.degrees((math.sin(math.radians(Lat)))*math.sin(math.radians(D)))))
+        bottom = math.cos(math.radians(Lat))*math.cos(math.radians(D))
+        asr_del = (1/15)*(math.degrees(math.acos(top/bottom)))
+        return asr_del
+
+
     def __calcPrayerTimes(self) -> dict:
         JD = self.__calcJD(self.__year, self.__month, self.__daysDecimal)
-        print(f"JD: {JD}")
         T, DELTA = self.__calcSunDeclination(JD)
-        print(f"T: {T}")
-        print(f"DELTA: {DELTA}")
         ET = self.__calcEqTime(JD)
-        print(f"ET: {ET}")
         TT = self.__calcSunTransitTime(self.__utc_offset, self.__longitude, ET)
-        print(f"TT: {TT}")
         sunAltitudes = self.__calcSunAltitudes(self.CALCULATION_METHOD.fajr_angle, self.CALCULATION_METHOD.isha_angle, 0, self.ASR_METHOD, DELTA, self.__latitude)
-        print(f"sunAltitudes: {sunAltitudes}")
         hourAngles = self.__calcHourAngles(sunAltitudes, self.__latitude, DELTA)
-        print(f"hourAngles: {hourAngles}")
-        print(f"{self.__month}/{self.__day}/{self.__year}")
-        print(f"asr: {self.ASR_METHOD}")
         
         #asr_time = noon + timedelta(minutes_after_noon)
 
         # compute asr
-        G = self.darccot(2+self.dtan(abs(self.__latitude-DELTA)))
-        Z = 12.0 - ET
-        V = 1/15 * self.darccos((-self.dsin(G) - self.dsin(DELTA) * self.dsin(self.__latitude)) / (self.dcos(DELTA) * self.dcos(self.__latitude)))
-        print(f"Z: {Z}")
-        print(f"V: {V}")
 
         FAJR = TT - (hourAngles["fajr"] / 15)
         SUNRISE = TT - hourAngles["sunrise"] / 15
         DHUHR = TT + 2/60
-        ASR = TT + hourAngles["asr"] / 15
+        # ASR = TT + hourAngles["asr"] / 15
+        ASR = DHUHR + self.__calcAsrDiff(JD, self.__latitude)
         MAGHRIB = TT + (hourAngles["maghrib"] / 15)
         ISHA = TT + hourAngles["isha"] / 15
-        print(ISHA)
-        #print(f"Pos ASR: {asr_time}")
         
         prayerTimes = dict (
                 fajr= self.convertHrs(FAJR),
@@ -331,17 +333,17 @@ class PrayerTime:
                 isha= self.convertHrs(ISHA)
                 )
 
-        print(DHUHR)
         return prayerTimes
+
 
     def printPrayerTimes(self):
         prayerTimes = self.__calcPrayerTimes()
         print(f"FAJR: {prayerTimes["fajr"].strftime("%I:%M:%S %p")}")
         print(f"SUNRISE: {prayerTimes["sunrise"].strftime("%I:%M:%S %p")}")
-        print(f"{prayerTimes["dhuhr"].strftime("%I:%M:%S %p")}")
-        print(f"{prayerTimes["asr"].strftime("%I:%M:%S %p")}")
-        print(f"{prayerTimes["maghrib"].strftime("%I:%M:%S %p")}")
-        print(f"{prayerTimes["isha"].strftime("%I:%M:%S %p")}")
+        print(f"DHUHR: {prayerTimes["dhuhr"].strftime("%I:%M:%S %p")}")
+        print(f"ASR: {prayerTimes["asr"].strftime("%I:%M:%S %p")}")
+        print(f"MAGHRIB: {prayerTimes["maghrib"].strftime("%I:%M:%S %p")}")
+        print(f"ISHA: {prayerTimes["isha"].strftime("%I:%M:%S %p")}")
 
     
     def convertHrs(self, decimal) -> datetime:
@@ -376,6 +378,9 @@ class PrayerTime:
 
     def darccos(self, x: float) -> float:
         return self.rtd(math.acos(x))
+
+    def arccot(self, x):
+        return math.pi / 2 - math.atan(x) 
 
 if __name__ == "__main__":
     main()

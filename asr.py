@@ -25,3 +25,5 @@ print(f"asr_del: {asr_del}")
 dhuhr = 12.3778
 asr = dhuhr + asr_del
 print(f"asr: {asr}")
+print(f"delta: {D}")
+print(f"EqT: {EqT}")
