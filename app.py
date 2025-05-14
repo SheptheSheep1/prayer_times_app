@@ -1,9 +1,26 @@
 import math
 from datetime import datetime, timezone
+from typing import Dict
+from urllib.request import urlopen
 import time
+import argparse
+import os
+import json
+import re
 from geopy.geocoders import Nominatim
 
+
 def main():
+    parser = argparse.ArgumentParser(
+        prog="Ma'ruf",
+        description='Calculates islamic prayer times using on-device calculations exclusively',
+        epilog='Visit <https://github.com/SheptheSheep1/prayer_times_app> for more info and documentation.'
+    )
+    parser.add_argument('-b', '--headless', action='store_true') #run with no other user interaction
+    parser.add_argument('-d', '--debug', action='store_true')
+    args = parser.parse_args()
+    print(args)
+
     debug = False
     # print(os.environ['LATITUDE'])
     print("\n-------------------------------------")
@@ -11,46 +28,111 @@ def main():
     print("----------Welcome to Ma'ruf----------")
     print("-------------------------------------")
     print("-------------------------------------\n")
-    print('''
-          What would you like to do?
-          (1) Calculate Prayer Times
-          ''')
-    modeInput = int(input("Enter answer here (format: 5): ").strip())
-    match modeInput:
-        case 1: # calculate prayer times
-            if getYesNo("Would you like to use your system date and time?"):
-                prayerTime = PrayerTime()
-            else:
-                year = int(input("Enter the gregorian year in AD (format: '2024'): ").strip())
-                month = int(input("Enter the gregorian month (format: '01'): ").strip())
-                day = int(input("Enter the day of the month (format: '09'): ").strip())
-                utc_timezone = float(input("Enter your timezone's offset from UTC (format: '11.5'): ").strip())
-                prayerTime = PrayerTime(month, day, year, utc_timezone)
-            if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
-                pass
-            elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
-                city = str(input(("Enter your city/country (format: New York, USA): ")))
-                prayerTime.setCoordsbyCity(city)
-            else:
-                try:
-                    latitude = float(input("Enter your latitude coordinate (format: 12.34567): ").strip())
-                    longitude = float(input("Enter your longitude coordinate (format: 12.34567): ").strip())
-                    prayerTime.setGPScoordinates(latitude, longitude)
-                    print(f"{prayerTime.getGPSCoordinates()} set")
-                except ValueError:
-                    print("Please enter a number in the given format")
-            prayerTime.promptCalcMethod()
-            if getYesNo("Would you like to use the Hanafi asr calculation method (2x Shadow Length)?"):
-                prayerTime.ASR_METHOD = 2
-            else: prayerTime.ASR_METHOD = 1
-            method = ""
-            if (prayerTime.ASR_METHOD == 1):
-                method = "1 Shadow Length (Shafi'i, Maliki, Hanbali)"
-            elif (prayerTime.ASR_METHOD == 2):
-                method = "2 Shadow Length (Hanafi)"
-            print(f"Asr juristic method set to: {method}\n")
-            print("Calculating prayer times...\n")
-            prayerTime.printPrayerTimes()
+    doct = userInteraction()
+    prayerTime = PrayerTime(doct["month"])
+    prayerTime.setGPScoordinates(doct["latitude"], doct["longitude"])
+    prayerTime.setCalcMethod(doct["calc_method"])
+    prayerTime.printPrayerTimes()
+
+#    print('''
+#          What would you like to do?
+#          (1) Calculate Prayer Times
+#          ''')
+#    modeInput = int(input("Enter answer here (format: 5): ").strip())
+#    match modeInput:
+#        case 1: # calculate prayer times
+#            if getYesNo("Would you like to use your system date and time?"):
+#                prayerTime = PrayerTime()
+#            else:
+#                year = int(input("Enter the gregorian year in AD (format: '2024'): ").strip())
+#                month = int(input("Enter the gregorian month (format: '01'): ").strip())
+#                day = int(input("Enter the day of the month (format: '09'): ").strip())
+#                utc_timezone = float(input("Enter your timezone's offset from UTC (format: '11.5'): ").strip())
+#                prayerTime = PrayerTime(month, day, year, utc_timezone)
+#            if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
+#                prayerTime.setLocationbyIP();
+#            elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
+#                city = str(input(("Enter your city/country (format: New York, USA): ")))
+#                prayerTime.setCoordsbyCity(city)
+#            else:
+#                try:
+#                    latitude = float(input("Enter your latitude coordinate (format: 12.34567): ").strip())
+#                    longitude = float(input("Enter your longitude coordinate (format: 12.34567): ").strip())
+#                    prayerTime.setGPScoordinates(latitude, longitude)
+#                    print(f"{prayerTime.getGPSCoordinates()} set")
+#                except ValueError:
+#                    print("Please enter a number in the given format")
+#            prayerTime.promptCalcMethod()
+#            if getYesNo("Would you like to use the Hanafi asr calculation method (2x Shadow Length)?"):
+#                prayerTime.ASR_METHOD = 2
+#            else: prayerTime.ASR_METHOD = 1
+#            method = ""
+#            if (prayerTime.ASR_METHOD == 1):
+#                method = "1 Shadow Length (Shafi'i, Maliki, Hanbali)"
+#            elif (prayerTime.ASR_METHOD == 2):
+#                method = "2 Shadow Length (Hanafi)"
+#            print(f"Asr juristic method set to: {method}\n")
+#            print("Calculating prayer times...\n")
+#            prayerTime.printPrayerTimes()
+
+def userInteraction() -> Dict:
+    latitude = None
+    longitude = None
+    description = ""
+    # date/time
+    if getYesNo("Would you like to use your system date/time?"):
+        month = datetime.now().date().month
+        day = datetime.now().date().day
+        year = datetime.now().date().year
+        utc_offset = getLocalUTCOffset(time.time())
+    else:
+        year = int(input("Enter the gregorian year in AD (format: '2024'): ").strip())
+        month = int(input("Enter the gregorian month (format: '01'): ").strip())
+        day = int(input("Enter the day of the month (format: '09'): ").strip())
+        utc_offset = float(input("Enter your timezone's offset from UTC (format: '11.5'): ").strip())
+
+    # location
+    if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
+        latitude, longitude, description = getLocationByIP()
+    elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
+        user_query = str(input(("Enter your city/country (format: New York, USA), limit to 40 alphanumeric characters (Aa-Zz, 0-9): ")))
+        query_string = ""
+        while True:
+            try:
+                query_string = processQuery(user_query)
+            except ValueError as e:
+                print(e)
+            break
+        latitude, longitude, description = getLocationByQuery(query_string)
+    else:
+        try:
+            latitude = float(input("Enter your latitude coordinate (format: 12.34): ").strip())
+            latitude = "{:.2f}".format(latitude)
+            longitude = float(input("Enter your longitude coordinate (format: 12.34): ").strip())
+            longitude = "{:.2f}".format(longitude)
+            description = "Custom"
+        except ValueError:
+            print("Please enter a number in the given format")
+    
+    print(f"{latitude}, {longitude}, {description} set")
+    # calc method
+    CalcMethod = promptCalcMethod()
+    if getYesNo("Would you like to use the Hanafi asr calculation method (2x Shadow Length)?"):
+        ASR_METHOD = 2
+    else: ASR_METHOD = 1
+    method = ""
+    if (ASR_METHOD == 1):
+        method = "1 Shadow Length (Shafi'i, Maliki, Hanbali)"
+    elif (ASR_METHOD == 2):
+        method = "2 Shadow Length (Hanafi)"
+        print(f"Asr juristic method set to: {method}\n")
+        print("Calculating prayer times...\n")
+
+    return dict(latitude=latitude, longitude=longitude, description=description, calc_method=CalcMethod, asr_method=ASR_METHOD, month=month, day=day, year=year, utc_offset=utc_offset)
+
+
+
+
 
 def getYesNo(question: str) -> bool:
     while True:
@@ -65,46 +147,31 @@ def getYesNo(question: str) -> bool:
 def getLocalUTCOffset(time) -> float:
     return ((datetime.fromtimestamp(time).timestamp()) - datetime.fromtimestamp(time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
 
+def getLocationByIP() -> tuple[float, float, str]:
+    url = "http://ip-api.com/json/"
+    with urlopen(url) as response:
+        body = response.read()
+    responseDict = json.loads(body)
+    latitude = responseDict["lat"]
+    longitude = responseDict["lon"]
+    desc = "".join([responseDict["city"]," ",responseDict["region"]])
+    return (latitude, longitude, desc)
 
-class PrayerTime:
-    ASR_METHOD: int = 1
-    #CalcMethod = namedtuple("CalcMethod", ["name", "fajr_angle", "isha_angle", "fixed"])
-    __ts = time.time()
-    __month = 0
-    __day = 0.0
-    __year = 0
-    __utc_offset = 0.0
-    __geolocator = Nominatim(user_agent='maruf')
-    __daysDecimal = 0.0
+def getLocationByQuery(query: str) -> tuple[float, float, str]:
+    geolocator = Nominatim(user_agent='maruf')
+    location = geolocator.geocode(query)
+    return (location.latitude, location.longitude, location.address)
 
-    class CalcMethod:
-        def __init__(self, name: str, fajr_angle: float, isha_angle: float, fixed: bool):
-            self.name = name
-            self.fajr_angle = fajr_angle
-            self.isha_angle = isha_angle
-            self.fixed = fixed
-        
-        def __str__(self):
-            return (self.name)
-    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time())):
-        self.__month = month
-        self.__day = day
-        self.__year = year
-        self.__utc_offset = utc_offset
-        self.__daysDecimal = day + 0.5
+def processQuery(query: str) -> str:
+    query = query.strip()
+    if not re.match("^[a-zA-Z0-9]*$", query):
+        raise ValueError("Error! Only alphanumeric characters allowed.")
+    elif len(query) > 40:
+        raise ValueError("Error! Input larger than 40 characters.")
+    return query
     
-    def setGPScoordinates(self, latitude: float, longitude: float):
-        self.__latitude = latitude
-        self.__longitude = longitude
-    
-    def setCoordsbyCity(self, city: str):
-        location = self.__geolocator.geocode(city)
-        self.__latitude = location.latitude
-        self.__longitude = location.longitude
-        print(f"Location set to: {location.address} ({location.latitude}, {location.longitude})")
-
-    def promptCalcMethod(self):
-        print(f'''
+def promptCalcMethod():
+    print(f'''
               (1) MWL (Muslim World League) Fajr: 18\N{DEGREE SIGN} Isha: 17\N{DEGREE SIGN}
               (2) ISNA (Islamic Society of North America) Fajr: 15\N{DEGREE SIGN} Isha: 15\N{DEGREE SIGN}
               (3) Umm al-Qura (Umm al-Qura University, Makkah) Fajr: 18.5\N{DEGREE SIGN} Isha: 90 mins after Maghrib, 120 mins during Ramadan
@@ -124,48 +191,94 @@ class PrayerTime:
               (17) Tehran (Institute of Geophysics, University of Tehran) Fajr: 17.7\N{DEGREE SIGN} Isha: 14\N{DEGREE SIGN}
               (18) Jafari (Shia Ithna Ashari) Fajr: 16\N{DEGREE SIGN} Isha: 14\N{DEGREE SIGN}
               ''')
-        answer = int(input("\nChoose your calculation method: ").strip())
-        # records calculation method as namedtuple 'CalcMethod' in order to maintain actual name of method as opposed just angles
-        match answer:
-            case 1:
-                self.CALCULATION_METHOD = self.CalcMethod("MWL", 18.0, 17.0, False)
-            case 2:
-                self.CALCULATION_METHOD = self.CalcMethod("ISNA", 15.0, 15.0, False)
-            case 3:
-                self.CALCULATION_METHOD = self.CalcMethod("Umm al-Qura", 18.5, 90, True)
-            case 4:
-                self.CALCULATION_METHOD = self.CalcMethod("Gulf", 19.5, 90, True)
-            case 5:
-                self.CALCULATION_METHOD = self.CalcMethod("Algerian", 18.0, 17.0, False)
-            case 6:
-                self.CALCULATION_METHOD = self.CalcMethod("Karachi", 18.0, 18.0, False)
-            case 7:
-                self.CALCULATION_METHOD = self.CalcMethod("Diyanet", 18.0, 17.0, False)
-            case 8:
-                self.CALCULATION_METHOD = self.CalcMethod("Egypt", 19.5, 17.5, False)
-            case 9:
-                self.CALCULATION_METHOD = self.CalcMethod("EgyptBis", 20.0, 18.0, False)
-            case 10:
-                self.CALCULATION_METHOD = self.CalcMethod("Kemenag", 20.0, 18.0, False)
-            case 11:
-                self.CALCULATION_METHOD = self.CalcMethod("MUIS", 20.0, 18.0, False)
-            case 12: 
-                self.CALCULATION_METHOD = self.CalcMethod("JAKIM", 20.0, 18.0, False)
-            case 13:
-                self.CALCULATION_METHOD = self.CalcMethod("UDIF", 12.0, 12.0, False)
-            case 14:
-                self.CALCULATION_METHOD = self.CalcMethod("France15", 15.0, 15.0, False)
-            case 15:
-                self.CALCULATION_METHOD = self.CalcMethod("France18", 18.0, 18.0, False)
-            case 16:
-                self.CALCULATION_METHOD = self.CalcMethod("Tunisia", 18.0, 18.0, False)
-            case 17:
-                self.CALCULATION_METHOD = self.CalcMethod("Tehran", 17.7, 14.0, False)
-            case 18:
-                self.CALCULATION_METHOD = self.CalcMethod("Jafari", 16.0, 14.0, False)
-            case _:
-                self.CALCULATION_METHOD = self.CalcMethod("booh", 18.0, 17.0, False)
-        print(f"{self.CALCULATION_METHOD.name} chosen\n")
+    answer = int(input("\nChoose your calculation method: ").strip())
+    # records calculation method as namedtuple 'CalcMethod' in order to maintain actual name of method as opposed just angles (DEPRECATED)
+    match answer:
+        case 1:
+            CALCULATION_METHOD = CalcMethod("MWL", 18.0, 17.0, False)
+        case 2:
+            CALCULATION_METHOD = CalcMethod("ISNA", 15.0, 15.0, False)
+        case 3:
+            CALCULATION_METHOD = CalcMethod("Umm al-Qura", 18.5, 90, True)
+        case 4:
+            CALCULATION_METHOD = CalcMethod("Gulf", 19.5, 90, True)
+        case 5:
+            CALCULATION_METHOD = CalcMethod("Algerian", 18.0, 17.0, False)
+        case 6:
+            CALCULATION_METHOD = CalcMethod("Karachi", 18.0, 18.0, False)
+        case 7:
+            CALCULATION_METHOD = CalcMethod("Diyanet", 18.0, 17.0, False)
+        case 8:
+            CALCULATION_METHOD = CalcMethod("Egypt", 19.5, 17.5, False)
+        case 9:
+            CALCULATION_METHOD = CalcMethod("EgyptBis", 20.0, 18.0, False)
+        case 10:
+            CALCULATION_METHOD = CalcMethod("Kemenag", 20.0, 18.0, False)
+        case 11:
+            CALCULATION_METHOD = CalcMethod("MUIS", 20.0, 18.0, False)
+        case 12: 
+            CALCULATION_METHOD = CalcMethod("JAKIM", 20.0, 18.0, False)
+        case 13:
+            CALCULATION_METHOD = CalcMethod("UDIF", 12.0, 12.0, False)
+        case 14:
+            CALCULATION_METHOD = CalcMethod("France15", 15.0, 15.0, False)
+        case 15:
+            CALCULATION_METHOD = CalcMethod("France18", 18.0, 18.0, False)
+        case 16:
+            CALCULATION_METHOD = CalcMethod("Tunisia", 18.0, 18.0, False)
+        case 17:
+            CALCULATION_METHOD = CalcMethod("Tehran", 17.7, 14.0, False)
+        case 18:
+            CALCULATION_METHOD = CalcMethod("Jafari", 16.0, 14.0, False)
+        case _:
+            CALCULATION_METHOD = CalcMethod("booh", 18.0, 17.0, False)
+    return CALCULATION_METHOD
+    print(f"{CALCULATION_METHOD.name} chosen\n")
+
+
+class CalcMethod:
+    def __init__(self, name: str, fajr_angle: float, isha_angle: float, fixed: bool):
+        self.name = name
+        self.fajr_angle = fajr_angle
+        self.isha_angle = isha_angle
+        self.fixed = fixed
+
+    def __str__(self):
+        return (self.name)
+
+class PrayerTime:
+    ASR_METHOD: int = 1
+    #CalcMethod = namedtuple("CalcMethod", ["name", "fajr_angle", "isha_angle", "fixed"])
+    __ts = time.time()
+    __month = 0
+    __day = 0.0
+    __year = 0
+    __utc_offset = 0.0
+    __geolocator = Nominatim(user_agent='maruf')
+    __daysDecimal = 0.0
+    __latitude = None
+    __longitude = None
+    __description = None
+    CALCULATION_METHOD = None
+
+    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time())):
+        self.__month = month
+        self.__day = day
+        self.__year = year
+        self.__utc_offset = utc_offset
+        self.__daysDecimal = day + 0.5
+    
+    def setGPScoordinates(self, latitude: float, longitude: float):
+        self.__latitude = latitude
+        self.__longitude = longitude
+    
+    def setLocation(self, latitude: float, longitude: float, description: str):
+        self.__latitude = latitude
+        self.__longitude = longitude
+        self.__description = description
+
+    def setCalcMethod(self, calcMethod):
+        self.CALCULATION_METHOD = calcMethod
 
     # calculates Julian days in decimal from a given gregorian date
     def __calcJD(self, year, month, day) -> float:
@@ -241,11 +354,14 @@ class PrayerTime:
         L0 = 280.46607 + 36000.7698*U
         ET1000 = -(1789 + 237*U) * math.sin(math.radians(L0)) - (7146 - 62*U) * math.cos(math.radians(L0)) + (9934 - 14*U) * math.sin(math.radians(2*L0)) - (29 + 5*U) * math.cos(math.radians(2*L0)) + (74 + 10*U) * math.sin(math.radians(3*L0)) + (320 - 4*U) * math.cos(math.radians(3*L0)) - 212*math.sin(math.radians(4*L0))
         ET = ET1000 / 1000
+        print(f"\nU: {U}\nL0:{L0}\nET1000:{ET1000}\n")
+        print(f"Equation of Time: {ET} minutes")
         return ET
 
     def __calcSunTransitTime(self, utc_offset: float, longitude: float, eqTime: float) -> float:
         # calculates sun transit time
         TT = 12.0 + utc_offset - (longitude / 15.0) - (eqTime / 60.0)
+        print(f"Sun Transit Time: {TT} hours")
         return TT
 
     def __calcSunAltitudes(self, fajr_angle: float, isha_angle: float, elevation: int, asr_method: int, sunDelta: float, latitude: float) -> dict:
@@ -262,6 +378,7 @@ class PrayerTime:
                 maghrib = SA_MAGHRIB,
                 isha = SA_ISHA
                 )
+        print(f"Sun Altitudes: {sunAltitudes}")
         return sunAltitudes
 
     def __calcHourAngles(self, sunAltitudes: dict, latitude: float, sunDelta: float) -> dict:
@@ -284,6 +401,7 @@ class PrayerTime:
                 maghrib= HA_MAGHRIB,
                 isha= HA_ISHA
                 )
+        print(f"Hour Angles: {hourAngles}")
 
         return hourAngles
 
@@ -297,6 +415,7 @@ class PrayerTime:
         e = 23.439 - 0.00000036* d
         
         D = math.degrees(math.asin(math.sin(math.radians(e))* math.sin(math.radians(L))))  # declination of the Sun
+        print(f"Declination of the Sun: {D}")
         
         top = math.sin(math.radians(math.degrees(self.arccot(2+math.tan(math.radians(Lat-D))))-math.degrees((math.sin(math.radians(Lat)))*math.sin(math.radians(D)))))
         bottom = math.cos(math.radians(Lat))*math.cos(math.radians(D))
@@ -338,7 +457,7 @@ class PrayerTime:
 
     def printPrayerTimes(self):
         prayerTimes = self.__calcPrayerTimes()
-        print(f"FAJR: {prayerTimes["fajr"].strftime("%I:%M:%S %p")}")
+        print(f"\nFAJR: {prayerTimes["fajr"].strftime("%I:%M:%S %p")}")
         print(f"SUNRISE: {prayerTimes["sunrise"].strftime("%I:%M:%S %p")}")
         print(f"DHUHR: {prayerTimes["dhuhr"].strftime("%I:%M:%S %p")}")
         print(f"ASR: {prayerTimes["asr"].strftime("%I:%M:%S %p")}")
