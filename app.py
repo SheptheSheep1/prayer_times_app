@@ -34,47 +34,6 @@ def main():
     prayerTime.setCalcMethod(doct["calc_method"])
     prayerTime.printPrayerTimes()
 
-#    print('''
-#          What would you like to do?
-#          (1) Calculate Prayer Times
-#          ''')
-#    modeInput = int(input("Enter answer here (format: 5): ").strip())
-#    match modeInput:
-#        case 1: # calculate prayer times
-#            if getYesNo("Would you like to use your system date and time?"):
-#                prayerTime = PrayerTime()
-#            else:
-#                year = int(input("Enter the gregorian year in AD (format: '2024'): ").strip())
-#                month = int(input("Enter the gregorian month (format: '01'): ").strip())
-#                day = int(input("Enter the day of the month (format: '09'): ").strip())
-#                utc_timezone = float(input("Enter your timezone's offset from UTC (format: '11.5'): ").strip())
-#                prayerTime = PrayerTime(month, day, year, utc_timezone)
-#            if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
-#                prayerTime.setLocationbyIP();
-#            elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
-#                city = str(input(("Enter your city/country (format: New York, USA): ")))
-#                prayerTime.setCoordsbyCity(city)
-#            else:
-#                try:
-#                    latitude = float(input("Enter your latitude coordinate (format: 12.34567): ").strip())
-#                    longitude = float(input("Enter your longitude coordinate (format: 12.34567): ").strip())
-#                    prayerTime.setGPScoordinates(latitude, longitude)
-#                    print(f"{prayerTime.getGPSCoordinates()} set")
-#                except ValueError:
-#                    print("Please enter a number in the given format")
-#            prayerTime.promptCalcMethod()
-#            if getYesNo("Would you like to use the Hanafi asr calculation method (2x Shadow Length)?"):
-#                prayerTime.ASR_METHOD = 2
-#            else: prayerTime.ASR_METHOD = 1
-#            method = ""
-#            if (prayerTime.ASR_METHOD == 1):
-#                method = "1 Shadow Length (Shafi'i, Maliki, Hanbali)"
-#            elif (prayerTime.ASR_METHOD == 2):
-#                method = "2 Shadow Length (Hanafi)"
-#            print(f"Asr juristic method set to: {method}\n")
-#            print("Calculating prayer times...\n")
-#            prayerTime.printPrayerTimes()
-
 def userInteraction() -> Dict:
     latitude = None
     longitude = None
@@ -95,13 +54,15 @@ def userInteraction() -> Dict:
     if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
         latitude, longitude, description = getLocationByIP()
     elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
-        user_query = str(input(("Enter your city/country (format: New York, USA), limit to 40 alphanumeric characters (Aa-Zz, 0-9): ")))
+        user_query = ""
         query_string = ""
         while True:
             try:
+                user_query = str(input(("Enter your city/country (format: New York, USA), limit to 40 alphanumeric characters (Aa-Zz, 0-9): ")))
                 query_string = processQuery(user_query)
             except ValueError as e:
                 print(e)
+                continue
             break
         latitude, longitude, description = getLocationByQuery(query_string)
     else:
@@ -164,8 +125,8 @@ def getLocationByQuery(query: str) -> tuple[float, float, str]:
 
 def processQuery(query: str) -> str:
     query = query.strip()
-    if not re.match("^[a-zA-Z0-9]*$", query):
-        raise ValueError("Error! Only alphanumeric characters allowed.")
+    if not re.match("^^[A-Za-z0-9\s.'\-&,]+$", query):
+        raise ValueError("Error! Only non-empty alphanumeric characters allowed.")
     elif len(query) > 40:
         raise ValueError("Error! Input larger than 40 characters.")
     return query
