@@ -1,6 +1,6 @@
 import math
 from datetime import datetime, timezone
-from typing import Dict
+from typing import Dict, Optional
 from urllib.request import urlopen
 import time
 import argparse
@@ -29,10 +29,9 @@ def main():
     print("-------------------------------------")
     print("-------------------------------------\n")
     doct = userInteraction()
-    prayerTime = PrayerTime(doct["month"])
-    prayerTime.setGPScoordinates(doct["latitude"], doct["longitude"])
-    prayerTime.setCalcMethod(doct["calc_method"])
-    prayerTime.printPrayerTimes()
+    prayerTime = PrayerTime(doct["month"], doct["day"], doct["year"], doct["utc_offset"], doct["calc_method"], doct["asr_method"], doct["description"], doct["latitude"], doct["longitude"])
+    print(prayerTime)
+    #prayerTime.printPrayerTimes()
 
 def userInteraction() -> Dict:
     latitude = None
@@ -75,7 +74,7 @@ def userInteraction() -> Dict:
         except ValueError:
             print("Please enter a number in the given format")
     
-    print(f"{latitude}, {longitude}, {description} set")
+    print(f"({latitude}, {longitude}) {description} set")
     # calc method
     CalcMethod = promptCalcMethod()
     if getYesNo("Would you like to use the Hanafi asr calculation method (2x Shadow Length)?"):
@@ -90,9 +89,6 @@ def userInteraction() -> Dict:
         print("Calculating prayer times...\n")
 
     return dict(latitude=latitude, longitude=longitude, description=description, calc_method=CalcMethod, asr_method=ASR_METHOD, month=month, day=day, year=year, utc_offset=utc_offset)
-
-
-
 
 
 def getYesNo(question: str) -> bool:
@@ -115,7 +111,7 @@ def getLocationByIP() -> tuple[float, float, str]:
     responseDict = json.loads(body)
     latitude = responseDict["lat"]
     longitude = responseDict["lon"]
-    desc = "".join([responseDict["city"]," ",responseDict["region"]])
+    desc = "".join([responseDict["city"],","," ",responseDict["region"]])
     return (latitude, longitude, desc)
 
 def getLocationByQuery(query: str) -> tuple[float, float, str]:
@@ -125,7 +121,7 @@ def getLocationByQuery(query: str) -> tuple[float, float, str]:
 
 def processQuery(query: str) -> str:
     query = query.strip()
-    if not re.match("^^[A-Za-z0-9\s.'\-&,]+$", query):
+    if not re.match(r"^^[A-Za-z0-9\s.'\-&,]+$", query):
         raise ValueError("Error! Only non-empty alphanumeric characters allowed.")
     elif len(query) > 40:
         raise ValueError("Error! Input larger than 40 characters.")
@@ -198,7 +194,7 @@ def promptCalcMethod():
 
 
 class CalcMethod:
-    def __init__(self, name: str, fajr_angle: float, isha_angle: float, fixed: bool):
+    def __init__(self, name="MWL", fajr_angle=17.0, isha_angle=17.0, fixed=False):
         self.name = name
         self.fajr_angle = fajr_angle
         self.isha_angle = isha_angle
@@ -219,15 +215,28 @@ class PrayerTime:
     __daysDecimal = 0.0
     __latitude = None
     __longitude = None
-    __description = None
+    __description = ""
     CALCULATION_METHOD = None
 
-    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time())):
+    __fajr_time=datetime.min
+    __sunrise_time=datetime.min
+    __dhuhr_time=datetime.min
+    __asr_time=datetime.min
+    __maghrib_time=datetime.min
+    __isha_time=datetime.min
+
+    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time()), calc_method=CalcMethod(), asr_method=1, loc_desc="", latitude=0.0, longitude=0.0):
         self.__month = month
         self.__day = day
         self.__year = year
         self.__utc_offset = utc_offset
         self.__daysDecimal = day + 0.5
+        self.CALCULATION_METHOD = calc_method
+        self.ASR_METHOD = asr_method
+        self.__description = loc_desc
+        self.__latitude = latitude
+        self.__longitude = longitude
+        self.__calcPrayerTimes()
     
     def setGPScoordinates(self, latitude: float, longitude: float):
         self.__latitude = latitude
@@ -412,18 +421,25 @@ class PrayerTime:
                 maghrib= self.convertHrs(MAGHRIB),
                 isha= self.convertHrs(ISHA)
                 )
+        self.__fajr_time = prayerTimes["fajr"]
+        self.__sunrise_time = prayerTimes["sunrise"]
+        self.__dhuhr_time = prayerTimes["dhuhr"]
+        self.__asr_time = prayerTimes["asr"]
+        self.__maghrib_time = prayerTimes["maghrib"]
+        self.__isha_time = prayerTimes["isha"]
 
         return prayerTimes
 
 
-    def printPrayerTimes(self):
-        prayerTimes = self.__calcPrayerTimes()
-        print(f"\nFAJR: {prayerTimes["fajr"].strftime("%I:%M:%S %p")}")
-        print(f"SUNRISE: {prayerTimes["sunrise"].strftime("%I:%M:%S %p")}")
-        print(f"DHUHR: {prayerTimes["dhuhr"].strftime("%I:%M:%S %p")}")
-        print(f"ASR: {prayerTimes["asr"].strftime("%I:%M:%S %p")}")
-        print(f"MAGHRIB: {prayerTimes["maghrib"].strftime("%I:%M:%S %p")}")
-        print(f"ISHA: {prayerTimes["isha"].strftime("%I:%M:%S %p")}")
+    def __str__(self):
+        return(
+        f"\nFAJR: {self.__fajr_time.strftime("%I:%M:%S %p")}"
+        f"\nSUNRISE: {self.__sunrise_time.strftime("%I:%M:%S %p")}"
+        f"\nDHUHR: {self.__dhuhr_time.strftime("%I:%M:%S %p")}"
+        f"\nASR: {self.__asr_time.strftime("%I:%M:%S %p")}"
+        f"\nMAGHRIB: {self.__maghrib_time.strftime("%I:%M:%S %p")}"
+        f"\nISHA: {self.__isha_time.strftime("%I:%M:%S %p")}"
+        )
 
     
     def convertHrs(self, decimal) -> datetime:
