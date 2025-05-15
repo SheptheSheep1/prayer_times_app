@@ -8,6 +8,8 @@ import os
 import json
 import re
 from geopy.geocoders import Nominatim
+#TODO: fix improper utc offset resulting in negative time, erroring datetime class
+#      
 
 
 def main():
@@ -17,26 +19,44 @@ def main():
         epilog='Visit <https://github.com/SheptheSheep1/prayer_times_app> for more info and documentation.'
     )
     parser.add_argument('-b', '--headless', action='store_true') #run with no other user interaction
-    parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('-lat', '--latitude', help='input latitude coordinate')
+    parser.add_argument('-lng', '--longitude', help='input longitude coordinate')
     args = parser.parse_args()
     print(args)
 
-    debug = False
     # print(os.environ['LATITUDE'])
     print("\n-------------------------------------")
     print("-------------------------------------")
     print("----------Welcome to Ma'ruf----------")
     print("-------------------------------------")
     print("-------------------------------------\n")
-    doct = userInteraction()
+    doct = dict()
+    if args.headless is False or args.headless is None:
+        doct = userInteraction()
+    elif args.latitude is not None and args.longitude is not None:
+        print("default")
+        doct = getDefaultConfig(float(args.latitude), float(args.longitude))
     prayerTime = PrayerTime(doct["month"], doct["day"], doct["year"], doct["utc_offset"], doct["calc_method"], doct["asr_method"], doct["description"], doct["latitude"], doct["longitude"])
     print(prayerTime)
-    #prayerTime.printPrayerTimes()
+
+def getDefaultConfig(latitude: float, longitude: float) -> Dict:
+    month = datetime.now().month
+    day = datetime.now().day
+    year = datetime.now().year
+    utc_offset = getLocalUTCOffset(time.time())
+    asr_method = 2
+    description = "Custom"
+    latitude = latitude
+    longitude = longitude
+    return dict(latitude=latitude, longitude=longitude, description=description, calc_method=CalcMethod(), asr_method=asr_method, month=month, day=day, year=year, utc_offset=utc_offset)
+
 
 def userInteraction() -> Dict:
     latitude = None
     longitude = None
     description = ""
+
     # date/time
     if getYesNo("Would you like to use your system date/time?"):
         month = datetime.now().date().month
@@ -194,7 +214,7 @@ def promptCalcMethod():
 
 
 class CalcMethod:
-    def __init__(self, name="MWL", fajr_angle=17.0, isha_angle=17.0, fixed=False):
+    def __init__(self, name="MWL", fajr_angle=18.0, isha_angle=17.0, fixed=False):
         self.name = name
         self.fajr_angle = fajr_angle
         self.isha_angle = isha_angle
@@ -216,7 +236,7 @@ class PrayerTime:
     __latitude = None
     __longitude = None
     __description = ""
-    CALCULATION_METHOD = None
+    CALCULATION_METHOD = CalcMethod()
 
     __fajr_time=datetime.min
     __sunrise_time=datetime.min
@@ -225,7 +245,7 @@ class PrayerTime:
     __maghrib_time=datetime.min
     __isha_time=datetime.min
 
-    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time()), calc_method=CalcMethod(), asr_method=1, loc_desc="", latitude=0.0, longitude=0.0):
+    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time()), calc_method=CalcMethod(), asr_method=1, loc_desc="", latitude=34.0, longitude=-111.0):
         self.__month = month
         self.__day = day
         self.__year = year
@@ -413,6 +433,7 @@ class PrayerTime:
         MAGHRIB = TT + (hourAngles["maghrib"] / 15)
         ISHA = TT + hourAngles["isha"] / 15
         
+        print(FAJR)
         prayerTimes = dict (
                 fajr= self.convertHrs(FAJR),
                 sunrise= self.convertHrs(SUNRISE),
