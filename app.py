@@ -8,6 +8,9 @@ import os
 import json
 import re
 from geopy.geocoders import Nominatim
+
+# global variable
+debug = False
 #TODO: fix improper utc offset resulting in negative time, erroring datetime class
 #      
 
@@ -23,19 +26,21 @@ def main():
     parser.add_argument('-lat', '--latitude', help='input latitude coordinate')
     parser.add_argument('-lng', '--longitude', help='input longitude coordinate')
     args = parser.parse_args()
-    print(args)
-
-    # print(os.environ['LATITUDE'])
-    print("\n-------------------------------------")
-    print("-------------------------------------")
-    print("----------Welcome to Ma'ruf----------")
-    print("-------------------------------------")
-    print("-------------------------------------\n")
+    dPrint(args)
+    if args.verbose is True:
+        global debug 
+        debug = True
+    # dPrint(os.environ['LATITUDE'])
+    dPrint("\n-------------------------------------")
+    dPrint("-------------------------------------")
+    dPrint("----------Welcome to Ma'ruf----------")
+    dPrint("-------------------------------------")
+    dPrint("-------------------------------------\n")
     doct = dict()
     if args.headless is False or args.headless is None:
         doct = userInteraction()
     elif args.latitude is not None and args.longitude is not None:
-        print("default")
+        dPrint("default")
         doct = getDefaultConfig(float(args.latitude), float(args.longitude))
     prayerTime = PrayerTime(doct["month"], doct["day"], doct["year"], doct["utc_offset"], doct["calc_method"], doct["asr_method"], doct["description"], doct["latitude"], doct["longitude"])
     print(prayerTime)
@@ -80,7 +85,7 @@ def userInteraction() -> Dict:
                 user_query = str(input(("Enter your city/country (format: New York, USA), limit to 40 alphanumeric characters (Aa-Zz, 0-9): ")))
                 query_string = processQuery(user_query)
             except ValueError as e:
-                print(e)
+                dPrint(e)
                 continue
             break
         latitude, longitude, description = getLocationByQuery(query_string)
@@ -92,9 +97,9 @@ def userInteraction() -> Dict:
             longitude = "{:.2f}".format(longitude)
             description = "Custom"
         except ValueError:
-            print("Please enter a number in the given format")
+            dPrint("Please enter a number in the given format")
     
-    print(f"({latitude}, {longitude}) {description} set")
+    dPrint(f"({latitude}, {longitude}) {description} set")
     # calc method
     CalcMethod = promptCalcMethod()
     if getYesNo("Would you like to use the Hanafi asr calculation method (2x Shadow Length)?"):
@@ -105,8 +110,8 @@ def userInteraction() -> Dict:
         method = "1 Shadow Length (Shafi'i, Maliki, Hanbali)"
     elif (ASR_METHOD == 2):
         method = "2 Shadow Length (Hanafi)"
-        print(f"Asr juristic method set to: {method}\n")
-        print("Calculating prayer times...\n")
+        dPrint(f"Asr juristic method set to: {method}\n")
+        dPrint("Calculating prayer times...\n")
 
     return dict(latitude=latitude, longitude=longitude, description=description, calc_method=CalcMethod, asr_method=ASR_METHOD, month=month, day=day, year=year, utc_offset=utc_offset)
 
@@ -119,7 +124,7 @@ def getYesNo(question: str) -> bool:
         elif response in ('n', "no"):
             return False
         else:
-            print("Please answer with 'yes' or 'no'")
+            dPrint("Please answer with 'yes' or 'no'")
 
 def getLocalUTCOffset(time) -> float:
     return ((datetime.fromtimestamp(time).timestamp()) - datetime.fromtimestamp(time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
@@ -148,7 +153,7 @@ def processQuery(query: str) -> str:
     return query
     
 def promptCalcMethod():
-    print(f'''
+    dPrint(f'''
               (1) MWL (Muslim World League) Fajr: 18\N{DEGREE SIGN} Isha: 17\N{DEGREE SIGN}
               (2) ISNA (Islamic Society of North America) Fajr: 15\N{DEGREE SIGN} Isha: 15\N{DEGREE SIGN}
               (3) Umm al-Qura (Umm al-Qura University, Makkah) Fajr: 18.5\N{DEGREE SIGN} Isha: 90 mins after Maghrib, 120 mins during Ramadan
@@ -210,8 +215,7 @@ def promptCalcMethod():
         case _:
             CALCULATION_METHOD = CalcMethod("booh", 18.0, 17.0, False)
     return CALCULATION_METHOD
-    print(f"{CALCULATION_METHOD.name} chosen\n")
-
+    dPrint(f"{CALCULATION_METHOD.name} chosen\n")
 
 class CalcMethod:
     def __init__(self, name="MWL", fajr_angle=18.0, isha_angle=17.0, fixed=False):
@@ -228,7 +232,7 @@ class PrayerTime:
     #CalcMethod = namedtuple("CalcMethod", ["name", "fajr_angle", "isha_angle", "fixed"])
     __ts = time.time()
     __month = 0
-    __day = 0.0
+    __day = 0
     __year = 0
     __utc_offset = 0.0
     __geolocator = Nominatim(user_agent='maruf')
@@ -344,14 +348,14 @@ class PrayerTime:
         L0 = 280.46607 + 36000.7698*U
         ET1000 = -(1789 + 237*U) * math.sin(math.radians(L0)) - (7146 - 62*U) * math.cos(math.radians(L0)) + (9934 - 14*U) * math.sin(math.radians(2*L0)) - (29 + 5*U) * math.cos(math.radians(2*L0)) + (74 + 10*U) * math.sin(math.radians(3*L0)) + (320 - 4*U) * math.cos(math.radians(3*L0)) - 212*math.sin(math.radians(4*L0))
         ET = ET1000 / 1000
-        print(f"\nU: {U}\nL0:{L0}\nET1000:{ET1000}\n")
-        print(f"Equation of Time: {ET} minutes")
+        dPrint(f"\nU: {U}\nL0:{L0}\nET1000:{ET1000}\n")
+        dPrint(f"Equation of Time: {ET} minutes")
         return ET
 
     def __calcSunTransitTime(self, utc_offset: float, longitude: float, eqTime: float) -> float:
         # calculates sun transit time
         TT = 12.0 + utc_offset - (longitude / 15.0) - (eqTime / 60.0)
-        print(f"Sun Transit Time: {TT} hours")
+        dPrint(f"Sun Transit Time: {TT} hours")
         return TT
 
     def __calcSunAltitudes(self, fajr_angle: float, isha_angle: float, elevation: int, asr_method: int, sunDelta: float, latitude: float) -> dict:
@@ -368,7 +372,7 @@ class PrayerTime:
                 maghrib = SA_MAGHRIB,
                 isha = SA_ISHA
                 )
-        print(f"Sun Altitudes: {sunAltitudes}")
+        dPrint(f"Sun Altitudes: {sunAltitudes}")
         return sunAltitudes
 
     def __calcHourAngles(self, sunAltitudes: dict, latitude: float, sunDelta: float) -> dict:
@@ -391,7 +395,7 @@ class PrayerTime:
                 maghrib= HA_MAGHRIB,
                 isha= HA_ISHA
                 )
-        print(f"Hour Angles: {hourAngles}")
+        dPrint(f"Hour Angles: {hourAngles}")
 
         return hourAngles
 
@@ -405,7 +409,7 @@ class PrayerTime:
         e = 23.439 - 0.00000036* d
         
         D = math.degrees(math.asin(math.sin(math.radians(e))* math.sin(math.radians(L))))  # declination of the Sun
-        print(f"Declination of the Sun: {D}")
+        dPrint(f"Declination of the Sun: {D}")
         
         top = math.sin(math.radians(math.degrees(self.arccot(2+math.tan(math.radians(Lat-D))))-math.degrees((math.sin(math.radians(Lat)))*math.sin(math.radians(D)))))
         bottom = math.cos(math.radians(Lat))*math.cos(math.radians(D))
@@ -433,7 +437,7 @@ class PrayerTime:
         MAGHRIB = TT + (hourAngles["maghrib"] / 15)
         ISHA = TT + hourAngles["isha"] / 15
         
-        print(FAJR)
+        dPrint(FAJR)
         prayerTimes = dict (
                 fajr= self.convertHrs(FAJR),
                 sunrise= self.convertHrs(SUNRISE),
@@ -454,7 +458,7 @@ class PrayerTime:
 
     def __str__(self):
         return(
-        f"\nFAJR: {self.__fajr_time.strftime("%I:%M:%S %p")}"
+        f"FAJR: {self.__fajr_time.strftime("%I:%M:%S %p")}"
         f"\nSUNRISE: {self.__sunrise_time.strftime("%I:%M:%S %p")}"
         f"\nDHUHR: {self.__dhuhr_time.strftime("%I:%M:%S %p")}"
         f"\nASR: {self.__asr_time.strftime("%I:%M:%S %p")}"
@@ -465,11 +469,21 @@ class PrayerTime:
     
     def convertHrs(self, decimal) -> datetime:
         # convert a number of hours in decimal to a datetime object
+        dPrint(f"decimal: {decimal}")
+        # case: negative hours
+        if decimal < 0:
+            decimal += 24
         hours = int(decimal)
         minutes = int((decimal - hours) * 60)
         seconds = int((((decimal - hours) * 60) - minutes) * 60)
+
+        dPrint(
+            f"\nhours: {hours}"
+            f"\nminutes: {minutes}"
+            f"\nsecond: {seconds}"
+        )
         time = datetime(self.__year, self.__month, self.__day, hours, minutes, seconds)
-        #return time.strftime("%H:%M:%S")
+        #return time.strftime("%H:%M:%S
         return time
 
     def getGPSCoordinates(self) -> tuple:
@@ -498,6 +512,10 @@ class PrayerTime:
 
     def arccot(self, x):
         return math.pi / 2 - math.atan(x) 
+
+def dPrint(input):
+    if debug is True:
+        print(input)
 
 if __name__ == "__main__":
     main()
