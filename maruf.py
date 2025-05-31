@@ -1,6 +1,6 @@
 import sys
 from PySide6 import QtCore, QtWidgets, QtGui, QtSvgWidgets
-from salah_app import app
+import app
 import random
 import string
 from datetime import datetime
@@ -38,7 +38,9 @@ class MyWidget(QtWidgets.QWidget):
                             font-family: Helvetica;
                            }
             QLabel#mainPrayerTime{
-                           font-size: 24px;}
+                           font-size: 24px;
+                           background-color: #262626;
+                           padding-right: 15px;}
             QLabel#region2{
                            font-family: Helvetica;
                            font-size: 14px;
@@ -69,16 +71,57 @@ class MyWidget(QtWidgets.QWidget):
         self.subLayout = QtWidgets.QHBoxLayout()
 
         self.midLayout = QtWidgets.QVBoxLayout()
+        #fajr time
         self.fajr = QtWidgets.QHBoxLayout()
-        self.fajr.addWidget(QtSvgWidgets.QSvgWidget("./resources/fajr.svg"), 75, alignment=QtCore.Qt.AlignLeft)
+        self.fajrSvg = QtSvgWidgets.QSvgWidget("./resources/real/fajr.svg")
+        self.fajrSvg.setFixedSize(300, 80) #forces fixed for other mainTimes as well
+        self.fajr.addWidget(self.fajrSvg, alignment=QtCore.Qt.AlignLeft)
         self.fajrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.fajrTime.setObjectName("mainPrayerTime")
-        self.fajr.addWidget(self.fajrTime, 25)
+        self.fajr.addWidget(self.fajrTime)
+        #sunrise time
+        self.sunrise = QtWidgets.QHBoxLayout()
+        self.sunrise.addWidget(QtSvgWidgets.QSvgWidget("./resources/real/sunrise.svg"), 75, alignment=QtCore.Qt.AlignLeft)
+        self.sunriseTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.sunriseTime.setObjectName("mainPrayerTime")
+        self.sunrise.addWidget(self.sunriseTime, 25)
+        #dhuhr time
+        self.dhuhr = QtWidgets.QHBoxLayout()
+        self.dhuhr.addWidget(QtSvgWidgets.QSvgWidget("./resources/real/dhuhr.svg"), 75, alignment=QtCore.Qt.AlignLeft)
+        self.dhuhrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.dhuhrTime.setObjectName("mainPrayerTime")
+        self.dhuhr.addWidget(self.dhuhrTime, 25)
+        #asr time
+        self.asr = QtWidgets.QHBoxLayout()
+        self.asr.addWidget(QtSvgWidgets.QSvgWidget("./resources/real/asr.svg"), 75, alignment=QtCore.Qt.AlignLeft)
+        self.asrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.asrTime.setObjectName("mainPrayerTime")
+        self.asr.addWidget(self.asrTime, 25)
+        #maghrib time
+        self.maghrib = QtWidgets.QHBoxLayout()
+        self.maghrib.addWidget(QtSvgWidgets.QSvgWidget("./resources/real/maghrib.svg"), 75, alignment=QtCore.Qt.AlignLeft)
+        self.maghribTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.maghribTime.setObjectName("mainPrayerTime")
+        self.maghrib.addWidget(self.maghribTime, 25)
+        #isha time
+        self.isha = QtWidgets.QHBoxLayout()
+        self.isha.addWidget(QtSvgWidgets.QSvgWidget("./resources/real/isha.svg"), 75, alignment=QtCore.Qt.AlignLeft)
+        self.ishaTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.ishaTime.setObjectName("mainPrayerTime")
+        self.isha.addWidget(self.ishaTime, 25)
+        
+        # add prayer times
         self.midLayout.addLayout(self.fajr)
-        for _ in range(5):
-            label = QtWidgets.QLabel(datetime.min.strftime("%I:%M:%S %p"), alignment=QtCore.Qt.AlignCenter)
-            label.setObjectName("mainTime")
-            self.midLayout.addWidget(label)
+        self.midLayout.addLayout(self.sunrise)
+        self.midLayout.addLayout(self.dhuhr)
+        self.midLayout.addLayout(self.asr)
+        self.midLayout.addLayout(self.maghrib)
+        self.midLayout.addLayout(self.isha)
+
+        #for _ in range(5):
+        #    label = QtWidgets.QLabel(datetime.min.strftime("%I:%M:%S %p"), alignment=QtCore.Qt.AlignCenter)
+        #    label.setObjectName("mainTime")
+        #    self.midLayout.addWidget(label)
         self.fajr.setContentsMargins(0,0,0,0)
         self.fajr.setSpacing(0)
         self.midLayout.setContentsMargins(0,0,0,0)
