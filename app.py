@@ -11,9 +11,6 @@ from geopy.geocoders import Nominatim
 
 # global variable
 debug = False
-#TODO: fix improper utc offset resulting in negative time, erroring datetime class
-#      
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -42,6 +39,9 @@ def main():
     elif args.latitude is not None and args.longitude is not None:
         dPrint("default")
         doct = getDefaultConfig(float(args.latitude), float(args.longitude))
+    else:
+        print("Must provide latitude(-lat) and longitude(-lng). exiting...")
+        exit()
     prayerTime = PrayerTime(doct["month"], doct["day"], doct["year"], doct["utc_offset"], doct["calc_method"], doct["asr_method"], doct["description"], doct["latitude"], doct["longitude"])
     print(prayerTime)
 
