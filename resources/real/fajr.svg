@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="300"
+   height="80"
+   viewBox="0 0 79.375001 21.166666"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs1"><style
+       id="style1">
+      .cls-1 {
+        fill: none;
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 7.14px;
+      }
+    </style><style
+       id="style1-3">
+      .cls-1 {
+        fill: none;
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 7.14px;
+      }
+    </style><linearGradient
+       id="swatch242"><stop
+         style="stop-color:#ff0000;stop-opacity:1;"
+         offset="0"
+         id="stop242" /></linearGradient><style
+       id="style1-4">
+      .cls-1 {
+        fill: #1d1714;
+      }
+    </style></defs><g
+     id="layer1"
+     transform="translate(-63.112499,-125.60333)"><rect
+       style="fill:#262626;fill-opacity:1;stroke:none;stroke-width:0;stroke-dasharray:none"
+       id="rect1"
+       width="79.375"
+       height="21.166666"
+       x="0"
+       y="0"
+       transform="translate(63.112499,125.60333)" /><text
+       xml:space="preserve"
+       style="font-size:11.6417px;line-height:0;font-family:'DejaVu Math TeX Gyre';-inkscape-font-specification:'DejaVu Math TeX Gyre';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:none;stroke:#000000;stroke-width:0.132292"
+       x="88.831856"
+       y="140.26808"
+       id="text1"><tspan
+         id="tspan1"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.6417px;line-height:0;font-family:Roboto;-inkscape-font-specification:'Roboto Bold';text-align:start;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.132292"
+         x="88.831856"
+         y="140.26808">FAJR</tspan></text><g
+       id="g50"
+       transform="matrix(0.06170511,0,0,0.06057664,66.378758,128.40316)"><path
+         class="cls-1"
+         d="m 72.27,162.51 c 0,-49.26 39.93,-89.19 89.19,-89.19 49.26,0 89.19,39.93 89.19,89.19 z"
+         id="path39"
+         style="fill:none;stroke:#ffffff;stroke-width:8.29595;stroke-dasharray:none" /><line
+         class="cls-1"
+         x1="120.56"
+         y1="55.790001"
+         x2="111.05"
+         y2="30.99"
+         id="line42"
+         style="stroke:#ffffff;stroke-width:8.29595;stroke-dasharray:none" /><line
+         class="cls-1"
+         x1="59.779999"
+         y1="110.52"
+         x2="36.110001"
+         y2="98.459999"
+         id="line43"
+         style="stroke:#ffffff;stroke-width:8.29595;stroke-dasharray:none" /><line
+         class="cls-1"
+         x1="202.36"
+         y1="55.790001"
+         x2="211.88"
+         y2="30.99"
+         id="line46"
+         style="stroke:#ffffff;stroke-width:8.29595;stroke-dasharray:none" /><line
+         class="cls-1"
+         x1="263.14001"
+         y1="110.52"
+         x2="286.81"
+         y2="98.459999"
+         id="line47"
+         style="stroke:#ffffff;stroke-width:8.29595;stroke-dasharray:none" /><line
+         class="cls-1"
+         x1="47.950001"
+         y1="183.67"
+         x2="274.98001"
+         y2="183.67"
+         id="line48"
+         style="stroke:#ffffff;stroke-width:8.29595;stroke-dasharray:none" /><line
+         class="cls-1"
+         x1="72.269997"
+         y1="204.82001"
+         x2="250.64999"
+         y2="204.82001"
+         id="line49"
+         style="stroke:#ffffff;stroke-width:8.29595;stroke-dasharray:none" /><line
+         class="cls-1"
+         x1="226.32001"
+         y1="225.99001"
+         x2="96.589996"
+         y2="225.99001"
+         id="line50"
+         style="stroke:#ffffff;stroke-width:8.29595;stroke-dasharray:none" /></g><rect
+       style="display:none;fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:0.510129;stroke-dasharray:none;stroke-opacity:1"
+       id="rect3"
+       width="25.948204"
+       height="20.656538"
+       x="63.367565"
+       y="125.85839" /></g></svg>
