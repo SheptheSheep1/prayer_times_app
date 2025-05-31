@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 257.83 231.75">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 7.14px;
+      }
+    </style>
+  </defs>
+  <g id="Evening_mode_button" data-name="Evening mode button">
+    <g>
+      <path class="cls-1" d="M43.61,164.68c11.13-36.53,45.13-63.11,85.3-63.11s74.17,26.58,85.3,63.11H43.61Z"/>
+      <line class="cls-1" x1="128.92" y1="76.47" x2="128.92" y2="31.83"/>
+      <line class="cls-1" x1="52.56" y1="105.78" x2="22.68" y2="72.61"/>
+      <line class="cls-1" x1="88.02" y1="84.05" x2="78.5" y2="59.25"/>
+      <line class="cls-1" x1="27.23" y1="138.78" x2="3.57" y2="126.72"/>
+      <line class="cls-1" x1="205.28" y1="105.78" x2="235.15" y2="72.61"/>
+      <line class="cls-1" x1="169.81" y1="84.05" x2="179.33" y2="59.25"/>
+      <line class="cls-1" x1="230.6" y1="138.78" x2="254.27" y2="126.72"/>
+      <line class="cls-1" x1="15.4" y1="185.85" x2="242.43" y2="185.85"/>
+      <line class="cls-1" x1="39.72" y1="207.01" x2="218.11" y2="207.01"/>
+      <line class="cls-1" x1="193.77" y1="228.18" x2="64.05" y2="228.18"/>
+      <polygon points="36.71 0 38.65 14.31 51.55 20.82 38.54 27.09 36.32 41.37 26.34 30.93 12.08 33.24 18.92 20.52 12.32 7.67 26.53 10.25 36.71 0"/>
+      <polygon points="235.67 9.95 230.32 23.37 238.34 35.38 223.93 34.44 214.99 45.78 211.43 31.78 197.88 26.78 210.09 19.07 210.66 4.63 221.77 13.87 235.67 9.95"/>
+    </g>
+  </g>
+</svg>

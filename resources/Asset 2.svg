@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 322.92 229.56">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 7.14px;
+      }
+    </style>
+  </defs>
+  <g id="Morning_mode_button" data-name="Morning mode button">
+    <g>
+      <path class="cls-1" d="M72.27,162.51c0-49.26,39.93-89.19,89.19-89.19s89.19,39.93,89.19,89.19H72.27Z"/>
+      <line class="cls-1" x1="161.46" y1="48.21" x2="161.46" y2="3.57"/>
+      <line class="cls-1" x1="85.1" y1="77.52" x2="55.23" y2="44.35"/>
+      <line class="cls-1" x1="47.97" y1="150.4" x2="3.57" y2="145.74"/>
+      <line class="cls-1" x1="120.56" y1="55.79" x2="111.05" y2="30.99"/>
+      <line class="cls-1" x1="59.78" y1="110.52" x2="36.11" y2="98.46"/>
+      <line class="cls-1" x1="237.82" y1="77.52" x2="267.7" y2="44.35"/>
+      <line class="cls-1" x1="274.96" y1="150.4" x2="319.36" y2="145.74"/>
+      <line class="cls-1" x1="202.36" y1="55.79" x2="211.88" y2="30.99"/>
+      <line class="cls-1" x1="263.14" y1="110.52" x2="286.81" y2="98.46"/>
+      <line class="cls-1" x1="47.95" y1="183.67" x2="274.98" y2="183.67"/>
+      <line class="cls-1" x1="72.27" y1="204.82" x2="250.65" y2="204.82"/>
+      <line class="cls-1" x1="226.32" y1="225.99" x2="96.59" y2="225.99"/>
+    </g>
+  </g>
+</svg>

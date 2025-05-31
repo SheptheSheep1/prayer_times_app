@@ -1,117 +1,26 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   width="79.375mm"
-   height="21.166666mm"
-   viewBox="0 0 79.375 21.166666"
-   version="1.1"
-   id="svg1"
-   inkscape:version="1.4.1 (93de688d07, 2025-03-30)"
-   sodipodi:docname="fajr.svg"
-   inkscape:export-filename="fajr.svg"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview1"
-     pagecolor="#505050"
-     bordercolor="#ffffff"
-     borderopacity="1"
-     inkscape:showpageshadow="0"
-     inkscape:pageopacity="0"
-     inkscape:pagecheckerboard="1"
-     inkscape:deskcolor="#505050"
-     inkscape:document-units="mm"
-     inkscape:zoom="5.6568543"
-     inkscape:cx="174.03666"
-     inkscape:cy="28.637825"
-     inkscape:window-width="1920"
-     inkscape:window-height="1011"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg1"
-     showgrid="true">
-    <inkscape:grid
-       id="grid3"
-       units="mm"
-       originx="-6.2203243e-39"
-       originy="-3.8333346"
-       spacingx="1"
-       spacingy="1"
-       empcolor="#0099e5"
-       empopacity="0.30196078"
-       color="#0099e5"
-       opacity="0.14901961"
-       empspacing="5"
-       enabled="true"
-       visible="true" />
-  </sodipodi:namedview>
-  <defs
-     id="defs1">
-    <inkscape:path-effect
-       effect="fillet_chamfer"
-       id="path-effect3"
-       is_visible="true"
-       lpeversion="1"
-       nodesatellites_param="F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1"
-       radius="0"
-       unit="px"
-       method="auto"
-       mode="F"
-       chamfer_steps="1"
-       flexible="false"
-       use_knot_distance="true"
-       apply_no_radius="true"
-       apply_with_radius="true"
-       only_selected="false"
-       hide_knots="false" />
-    <inkscape:path-effect
-       effect="fillet_chamfer"
-       id="path-effect2"
-       is_visible="true"
-       lpeversion="1"
-       nodesatellites_param="F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1"
-       radius="0"
-       unit="px"
-       method="auto"
-       mode="F"
-       chamfer_steps="1"
-       flexible="false"
-       use_knot_distance="true"
-       apply_no_radius="true"
-       apply_with_radius="true"
-       only_selected="false"
-       hide_knots="false" />
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 257.83 202.14">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 7.14px;
+      }
+    </style>
   </defs>
-  <rect
-     style="fill:#262626;fill-opacity:1;stroke:none;stroke-width:0;stroke-dasharray:none"
-     id="rect1"
-     width="79.375"
-     height="21.166666"
-     x="0"
-     y="0" />
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-63.112499,-125.60333)">
-    <text
-       xml:space="preserve"
-       style="font-size:19.05px;line-height:0;font-family:'DejaVu Math TeX Gyre';-inkscape-font-specification:'DejaVu Math TeX Gyre';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:none;stroke:#000000;stroke-width:0.132292"
-       x="66.903267"
-       y="142.98563"
-       id="text1"
-       inkscape:transform-center-x="-0.0928125"
-       inkscape:transform-center-y="0.48726563"><tspan
-         sodipodi:role="line"
-         id="tspan1"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:19.05px;line-height:0;font-family:Roboto;-inkscape-font-specification:'Roboto Bold';text-align:start;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.132292"
-         x="66.903267"
-         y="142.98563">FAJR</tspan></text>
+  <g id="Morning_mode_button" data-name="Morning mode button">
+    <g>
+      <path class="cls-1" d="M39.72,135.08c0-49.26,39.93-89.19,89.19-89.19s89.19,39.93,89.19,89.19H39.72Z"/>
+      <line class="cls-1" x1="88.02" y1="28.37" x2="78.5" y2="3.57"/>
+      <line class="cls-1" x1="27.23" y1="83.1" x2="3.57" y2="71.04"/>
+      <line class="cls-1" x1="169.81" y1="28.37" x2="179.33" y2="3.57"/>
+      <line class="cls-1" x1="230.6" y1="83.1" x2="254.27" y2="71.04"/>
+      <line class="cls-1" x1="15.4" y1="156.24" x2="242.43" y2="156.24"/>
+      <line class="cls-1" x1="39.72" y1="177.4" x2="218.11" y2="177.4"/>
+      <line class="cls-1" x1="193.77" y1="198.57" x2="64.05" y2="198.57"/>
+    </g>
   </g>
 </svg>
