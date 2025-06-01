@@ -4,7 +4,6 @@ from typing import Dict, Optional
 from urllib.request import urlopen
 import time
 import argparse
-import os
 import json
 import re
 from geopy.geocoders import Nominatim
@@ -398,7 +397,8 @@ class PrayerTime:
         dPrint(f"Hour Angles: {hourAngles}")
 
         return hourAngles
-
+    
+    # params: jd: julian days, Lat: latitude, returns a double representing decimal hours after solar zenith for asr
     def __calcAsrDiff(self, jd, Lat) -> float:
         d = jd-2451545.0
 
@@ -415,8 +415,8 @@ class PrayerTime:
         bottom = math.cos(math.radians(Lat))*math.cos(math.radians(D))
         asr_del = (1/15)*(math.degrees(math.acos(top/bottom)))
         return asr_del
-
-
+    
+    # returns dict with prayertimes as datetime objects
     def __calcPrayerTimes(self) -> dict:
         JD = self.__calcJD(self.__year, self.__month, self.__daysDecimal)
         T, DELTA = self.__calcSunDeclination(JD)
