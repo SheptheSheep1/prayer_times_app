@@ -213,41 +213,95 @@ class MyWidget(QtWidgets.QWidget):
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, data=Data()):
         super().__init__(parent)
+        self.setStyleSheet('''
+    QLineEdit:disabled {
+        color: gray;
+        background-color: #262626;
+        border: 1px solid #a0a0a0;
+    }
+    QLineEdit::enabled {
+        color: black;
+        background-color: #ffffff;
+        border: 1px solid #a0a0a0}
+        ''')
         self.setFixedSize(640,480)
         self.zoopPoop = ""
         self.setWindowTitle("Settings")
         self.data = data
         
-        layout = QtWidgets.QVBoxLayout()
+        self.layout = QtWidgets.QVBoxLayout()
 
-        self.locationGroup = QtWidgets.QGroupBox("Location")
-
-        self.latEnter = QtWidgets.QLineEdit()
-        self.longEnter = QtWidgets.QLineEdit()
-        self.locationBox = QtWidgets.QVBoxLayout()
-        self.locationBox.addWidget(self.latEnter)
-        self.locationBox.addWidget(self.longEnter)
-        
-        self.locationGroup.setLayout(self.locationBox)
-
-        layout.addWidget(QtWidgets.QLabel("Settings go here"))
+        #layout.addWidget(QtWidgets.QLabel("Settings"), 5, alignment=QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+        self.calcMethodGroup = QtWidgets.QGroupBox("Calculation Method")
+        self.calcMethodVBox = QtWidgets.QVBoxLayout()
         self.calc_dropdown = QtWidgets.QComboBox()
         for name, method in CalcMethods.methods.items():
             self.calc_dropdown.addItem(name, userData=method)
-        save_button = QtWidgets.QPushButton("Save")
-        close_button = QtWidgets.QPushButton("Close")
-
-        close_button.clicked.connect(self.reject)
-        save_button.clicked.connect(self.accept)
-
-        layout.addWidget(self.locationGroup)
-        layout.addWidget(close_button)
-        layout.addWidget(save_button)
-        layout.addWidget(self.calc_dropdown)
-
-        self.setLayout(layout)
+        self.calcMethodVBox.addWidget(self.calc_dropdown)
+        self.calcMethodGroup.setLayout(self.calcMethodVBox)
 
 
+        # location
+        self.locationGroup = QtWidgets.QGroupBox("Location Method")
+        self.byIP = QtWidgets.QRadioButton("IPv4 Address (internet required)")
+        self.byQuery = QtWidgets.QRadioButton("Query to Nominatim Service (internet required)")
+        self.byHand = QtWidgets.QRadioButton("Manual Latitude and Longitude")
+        self.locationVBox = QtWidgets.QVBoxLayout()
+        self.locationVBox.addStretch(1)
+        self.locationGroup.setLayout(self.locationVBox)
+        # button group
+        self.locationBGroup = QtWidgets.QButtonGroup()
+        self.locationBGroup.addButton(self.byIP)
+        self.locationBGroup.addButton(self.byQuery)
+        self.locationBGroup.addButton(self.byHand)
+        self.locationBGroup.setExclusive(True)
+        self.locationBGroup.buttonClicked.connect(self.update_location_options)
+        # line edits
+        # latitude
+        self.latitude = QtWidgets.QLineEdit()
+        self.latitude.setPlaceholderText("Latitude")
+        self.latitude.setEnabled(False)
+        # longitude
+        self.longitude = QtWidgets.QLineEdit()
+        self.longitude.setPlaceholderText("Longitude")
+        self.longitude.setEnabled(False)
+        # query
+        self.query = QtWidgets.QLineEdit()
+        self.query.setPlaceholderText("Enter Region/City Name Here")
+        self.query.setEnabled(False)
+        # VBox
+        self.locationVBox.addWidget(self.byIP)
+        self.locationVBox.addWidget(self.byQuery)
+        self.locationVBox.addWidget(self.query)
+        self.locationVBox.addWidget(self.byHand)
+        self.locationVBox.addWidget(self.latitude)
+        self.locationVBox.addWidget(self.longitude)
+
+
+        # cancel/save button
+        self.save_button = QtWidgets.QPushButton("Save")
+        self.save_button.clicked.connect(self.accept)
+        self.close_button = QtWidgets.QPushButton("Cancel")
+        self.close_button.clicked.connect(self.reject)
+        self.closeLayout = QtWidgets.QHBoxLayout()
+        self.closeLayout.addWidget(self.close_button)
+        self.closeLayout.addWidget(self.save_button)
+
+
+        #self.layout.addWidget(QtWidgets.QSpacerItem(20,40))
+        self.layout.addWidget(self.locationGroup)
+        self.layout.addWidget(self.calcMethodGroup)
+        self.layout.addLayout(self.closeLayout)
+
+        self.setLayout(self.layout)
+
+    def update_location_options(self):
+        is_custom = self.byHand.isChecked()
+        is_query = self.byQuery.isChecked()
+
+        self.latitude.setEnabled(is_custom)
+        self.longitude.setEnabled(is_custom)
+        self.query.setEnabled(is_query)
 
 
 
