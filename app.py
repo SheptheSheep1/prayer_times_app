@@ -60,8 +60,9 @@ def userInteraction() -> Dict:
     latitude = None
     longitude = None
     description = ""
+    location = Location()
 
-    # date/time
+# date/time
     if getYesNo("Would you like to use your system date/time?"):
         month = datetime.now().date().month
         day = datetime.now().date().day
@@ -75,6 +76,7 @@ def userInteraction() -> Dict:
 
     # location
     if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
+
         latitude, longitude, description = getLocationByIP()
     elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
         user_query = ""
@@ -82,7 +84,7 @@ def userInteraction() -> Dict:
         while True:
             try:
                 user_query = str(input(("Enter your city/country (format: New York, USA), limit to 40 alphanumeric characters (Aa-Zz, 0-9): ")))
-                query_string = processQuery(user_query)
+                query_string = Location.processQuery(user_query)
             except ValueError as e:
                 dPrint(e)
                 continue
@@ -125,31 +127,6 @@ def getYesNo(question: str) -> bool:
         else:
             dPrint("Please answer with 'yes' or 'no'")
 
-def getLocalUTCOffset(time) -> float:
-    return ((datetime.fromtimestamp(time).timestamp()) - datetime.fromtimestamp(time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
-
-def getLocationByIP() -> tuple[float, float, str]:
-    url = "http://ip-api.com/json/"
-    with urlopen(url) as response:
-        body = response.read()
-    responseDict = json.loads(body)
-    latitude = responseDict["lat"]
-    longitude = responseDict["lon"]
-    desc = "".join([responseDict["city"],","," ",responseDict["region"]])
-    return (latitude, longitude, desc)
-
-def getLocationByQuery(query: str) -> tuple[float, float, str]:
-    geolocator = Nominatim(user_agent='maruf')
-    location = geolocator.geocode(query)
-    return (location.latitude, location.longitude, location.address)
-
-def processQuery(query: str) -> str:
-    query = query.strip()
-    if not re.match(r"^^[A-Za-z0-9\s.'\-&,]+$", query):
-        raise ValueError("Error! Only non-empty alphanumeric characters allowed.")
-    elif len(query) > 40:
-        raise ValueError("Error! Input larger than 40 characters.")
-    return query
     
 def promptCalcMethod():
     dPrint(f'''
@@ -215,6 +192,63 @@ def promptCalcMethod():
             CALCULATION_METHOD = CalcMethod("booh", 18.0, 17.0, False)
     return CALCULATION_METHOD
     dPrint(f"{CALCULATION_METHOD.name} chosen\n")
+
+def getLocalUTCOffset(time) -> float:
+    return ((datetime.fromtimestamp(time).timestamp()) - datetime.fromtimestamp(time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
+
+class Location:
+    def __init__(self, latitude=0.0, longitude=0.0, description=""):
+        self.latitude = latitude
+        self.longitude = longitude
+        self.description = description
+    def getLatitude(self):
+        return self.latitude
+    def getLongitude(self):
+        return self.longitude
+    def getDescription(self):
+        return self.description
+
+    def setLocationByIP(self):
+        url = "http://ip-api.com/json/"
+        try:
+            with urlopen(url) as response:
+                body = response.read()
+        except Exception as e:
+            raise e
+        responseDict = json.loads(body)
+        latitude = responseDict["lat"]
+        longitude = responseDict["lon"]
+        desc = "".join([responseDict["city"],","," ",responseDict["region"]])
+        #return (latitude, longitude, desc)
+        self.latitude = latitude
+        self.longitude = longitude
+        self.description = desc
+    
+    def setLocationByQuery(self, query: str):
+        geolocator = Nominatim(user_agent='maruf')
+        # TODO: Actual exception handling
+        try: 
+            location = geolocator.geocode(query)
+        except Exception as e:
+            raise e
+        #return (location.latitude, location.longitude, location.address)
+        self.latitude = location.latitude
+        self.longitude = location.longitude
+        self.description = location.address
+
+    def setLocationManually(self, latitude, longitude):
+        self.latitude = latitude
+        self.longitude = longitude
+        self.description = "Custom Location"
+    
+def processQuery(query: str) -> str:
+    query = query.strip()
+    if not re.match(r"^^[A-Za-z0-9\s.'\-&,]+$", query):
+        raise ValueError("Error! Only non-empty alphanumeric characters allowed.")
+    elif len(query) > 40:
+        raise ValueError("Error! Input larger than 40 characters.")
+    return query
+
 
 class CalcMethod:
     def __init__(self, name="MWL", fajr_angle=18.0, isha_angle=17.0, fixed=False):

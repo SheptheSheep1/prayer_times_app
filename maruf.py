@@ -1,15 +1,18 @@
 import sys
 import socket
+from data import Data
 from PySide6 import QtCore, QtWidgets, QtGui, QtSvgWidgets
 import app
 import random
 import string
 from datetime import datetime
+import multiprocessing
+import CalcMethods
 
 #prayerTime = app.PrayerTime()
 #print(prayerTime)
 class MyWidget(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, isNetwork: bool, data: Data):
         super().__init__()
         self.strftime = ""
         self.setWindowTitle("Ma'ruf")
@@ -192,22 +195,97 @@ class MyWidget(QtWidgets.QWidget):
         self.mainLayout.setContentsMargins(0,0,0,0)
         self.mainLayout.setSpacing(0)
 
-def is_connected(hostname):
+        self.settingsButton.clicked.connect(self.__open_settings)
+
+    def __open_settings(self):
+        self.dialog = SettingsDialog(self)
+        self.dialog.accepted.connect(self.dialog_finished)
+        self.dialog.rejected.connect(self.dialog_rejected)
+        self.dialog.open()
+
+    def dialog_finished(self):
+        print(self.dialog.calc_dropdown.currentData())
+        print("finished")
+
+    def dialog_rejected(self):
+        print("rejected")
+
+class SettingsDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None, data=Data()):
+        super().__init__(parent)
+        self.setFixedSize(640,480)
+        self.zoopPoop = ""
+        self.setWindowTitle("Settings")
+        self.data = data
+        
+        layout = QtWidgets.QVBoxLayout()
+
+        self.locationGroup = QtWidgets.QGroupBox("Location")
+
+        self.latEnter = QtWidgets.QLineEdit()
+        self.longEnter = QtWidgets.QLineEdit()
+        self.locationBox = QtWidgets.QVBoxLayout()
+        self.locationBox.addWidget(self.latEnter)
+        self.locationBox.addWidget(self.longEnter)
+        
+        self.locationGroup.setLayout(self.locationBox)
+
+        layout.addWidget(QtWidgets.QLabel("Settings go here"))
+        self.calc_dropdown = QtWidgets.QComboBox()
+        for name, method in CalcMethods.methods.items():
+            self.calc_dropdown.addItem(name, userData=method)
+        save_button = QtWidgets.QPushButton("Save")
+        close_button = QtWidgets.QPushButton("Close")
+
+        close_button.clicked.connect(self.reject)
+        save_button.clicked.connect(self.accept)
+
+        layout.addWidget(self.locationGroup)
+        layout.addWidget(close_button)
+        layout.addWidget(save_button)
+        layout.addWidget(self.calc_dropdown)
+
+        self.setLayout(layout)
+
+
+
+
+
+def is_connected(hostname, isConnected: list):
     try:
         # see if we can do a dns lookup, return True if it can happen
         host = socket.gethostbyname(hostname)
         s = socket.create_connection((host, 80), 2)
         s.close()
-        return True
+        isConnected[0] = True
+        return
     except Exception:
         pass # ignore errors and return False
-    return False
+    isConnected[0] = False
+    return
 
 if __name__ == "__main__":
-    print(f"internet_connection: {is_connected('one.one.one.one')}")
+    hostname = "one.one.one.one"
+    isConnected = [True]
+    checkInternet = multiprocessing.Process(target=is_connected, args=(hostname, isConnected))
+    checkInternet.start()
+    print("[+] checking internet connectivity...")
+    checkInternet.join(3)
+    if checkInternet.is_alive():
+        print("[-] dns lookup timeout, terminating process...")
+        checkInternet.kill()
+        checkInternet.join()
+    if isConnected[0]:
+        print("[+] internet connectivity check succeeded...")
+    else:
+        print("[-] internet connectivity check failed...")
+    #print("[+] internet connectivity check finished")
+
+    data = Data()
+
     app = QtWidgets.QApplication([])
 
-    widget = MyWidget()
+    widget = MyWidget(isConnected[0], data)
     widget.setFixedSize(800, 600)
     widget.show()
 
