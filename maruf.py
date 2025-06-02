@@ -2,7 +2,7 @@ import sys
 import socket
 from data import Data
 from PySide6 import QtCore, QtWidgets, QtGui, QtSvgWidgets
-import app
+import app as zapp
 import random
 import string
 from datetime import datetime
@@ -14,7 +14,19 @@ import CalcMethods
 class MyWidget(QtWidgets.QWidget):
     def __init__(self, isNetwork: bool, data: Data):
         super().__init__()
+        self.data = data
         self.strftime = ""
+        self.location = zapp.Location()
+        if isNetwork:
+            print("net")
+            self.data.setLocationMethod(0)
+            self.location.setLocationByIP()
+        else:
+            print("no net")
+            self.data.setLocationMethod(2)
+            self.location.setLocationManually(33.4838, -112.07404)
+        self.data.setLocation(self.location)
+        print(f"latitude: {self.data.getLocation().getLatitude()}")
         self.setWindowTitle("Ma'ruf")
         self.__initUI()
         self.init_style()
@@ -198,13 +210,25 @@ class MyWidget(QtWidgets.QWidget):
         self.settingsButton.clicked.connect(self.__open_settings)
 
     def __open_settings(self):
-        self.dialog = SettingsDialog(self)
+        self.dialog = SettingsDialog(self, self.data)
         self.dialog.accepted.connect(self.dialog_finished)
         self.dialog.rejected.connect(self.dialog_rejected)
         self.dialog.open()
 
     def dialog_finished(self):
-        print(self.dialog.calc_dropdown.currentData())
+        self.data.setCalcMethod(self.dialog.calc_dropdown.currentData())
+        print(data.getCalcMethod())
+        self.data.setAsrMethod(self.dialog.asrMethodDropdown.currentData())
+        print(f"asr: {self.data.getAsrMethod()}")
+        match(self.dialog.locationBGroup.checkedId()):
+            case -1:
+                print("no loc checked")
+            case 0:
+                print("loc ip check")
+            case 1:
+                print("loc query check")
+            case 2:
+                print("loc manual check")
         print("finished")
 
     def dialog_rejected(self):
@@ -225,18 +249,31 @@ class SettingsDialog(QtWidgets.QDialog):
         border: 1px solid #a0a0a0}
         ''')
         self.setFixedSize(640,480)
-        self.zoopPoop = ""
         self.setWindowTitle("Settings")
         self.data = data
         
         self.layout = QtWidgets.QVBoxLayout()
 
-        #layout.addWidget(QtWidgets.QLabel("Settings"), 5, alignment=QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
-        self.calcMethodGroup = QtWidgets.QGroupBox("Calculation Method")
+        #self.layout.addWidget(QtWidgets.QLabel("Settings"), 5, alignment=QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+
+        # asr method
+        self.asrMethodGroup = QtWidgets.QGroupBox("Asr Calculation Method")
+        self.asrMethodDropdown = QtWidgets.QComboBox()
+        self.asrMethodDropdown.addItem("Shafi'i/Maliki/Hanbali", userData=1)
+        self.asrMethodDropdown.addItem("Hanafi", userData=2)
+        self.asrMethodDropdown.setCurrentIndex((self.data.getAsrMethod())-1)
+        self.asrMethodBox = QtWidgets.QVBoxLayout()
+        self.asrMethodBox.addWidget(self.asrMethodDropdown)
+        self.asrMethodGroup.setLayout(self.asrMethodBox)
+
+        
+        # calculation method
+        self.calcMethodGroup = QtWidgets.QGroupBox("Fajr/Isha Calculation Method")
         self.calcMethodVBox = QtWidgets.QVBoxLayout()
         self.calc_dropdown = QtWidgets.QComboBox()
         for name, method in CalcMethods.methods.items():
-            self.calc_dropdown.addItem(name, userData=method)
+            self.calc_dropdown.addItem(str(name), userData=method)
+        self.calc_dropdown.setCurrentText(str(self.data.getCalcMethod()))
         self.calcMethodVBox.addWidget(self.calc_dropdown)
         self.calcMethodGroup.setLayout(self.calcMethodVBox)
 
@@ -251,24 +288,39 @@ class SettingsDialog(QtWidgets.QDialog):
         self.locationGroup.setLayout(self.locationVBox)
         # button group
         self.locationBGroup = QtWidgets.QButtonGroup()
-        self.locationBGroup.addButton(self.byIP)
-        self.locationBGroup.addButton(self.byQuery)
-        self.locationBGroup.addButton(self.byHand)
+        self.locationBGroup.addButton(self.byIP, id=0)
+        self.locationBGroup.addButton(self.byQuery, id=1)
+        self.locationBGroup.addButton(self.byHand, id=2)
         self.locationBGroup.setExclusive(True)
+        self.locationBGroup.button(self.data.getLocationMethod()).setChecked(True)
         self.locationBGroup.buttonClicked.connect(self.update_location_options)
         # line edits
         # latitude
+        self.manualTooltip = "Enable Manual Latitude and Longitude Option to Edit"
         self.latitude = QtWidgets.QLineEdit()
         self.latitude.setPlaceholderText("Latitude")
         self.latitude.setEnabled(False)
+        self.latitude.setToolTip(self.manualTooltip)
         # longitude
         self.longitude = QtWidgets.QLineEdit()
         self.longitude.setPlaceholderText("Longitude")
         self.longitude.setEnabled(False)
+        self.longitude.setToolTip(self.manualTooltip)
         # query
         self.query = QtWidgets.QLineEdit()
         self.query.setPlaceholderText("Enter Region/City Name Here")
         self.query.setEnabled(False)
+        self.query.setToolTip("Enable Query Option to Edit")
+        # pre fill lines
+        match self.data.getLocationMethod():
+            case 1:
+                self.query.setText(str(self.data.getQuery()))
+                self.query.setEnabled(True)
+            case 2:
+                self.latitude.setText(str(self.data.getLocation().getLatitude()))
+                self.latitude.setEnabled(True)
+                self.longitude.setText(str(self.data.getLocation().getLongitude()))
+                self.longitude.setEnabled(True)
         # VBox
         self.locationVBox.addWidget(self.byIP)
         self.locationVBox.addWidget(self.byQuery)
@@ -279,19 +331,26 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
         # cancel/save button
-        self.save_button = QtWidgets.QPushButton("Save")
-        self.save_button.clicked.connect(self.accept)
-        self.close_button = QtWidgets.QPushButton("Cancel")
-        self.close_button.clicked.connect(self.reject)
-        self.closeLayout = QtWidgets.QHBoxLayout()
-        self.closeLayout.addWidget(self.close_button)
-        self.closeLayout.addWidget(self.save_button)
+        #self.save_button = QtWidgets.QPushButton("Save")
+        #self.save_button.clicked.connect(self.accept)
+        #self.close_button = QtWidgets.QPushButton("Cancel")
+        #self.close_button.clicked.connect(self.reject)
+        #self.closeLayout = QtWidgets.QHBoxLayout()
+        #self.closeLayout.addWidget(self.close_button, 50)
+        #self.closeLayout.addWidget(self.save_button, 50)
+        
+        self.closeButtons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Save | QtWidgets.QDialogButtonBox.Cancel)
+        self.closeButtons.accepted.connect(self.accept)
+        self.closeButtons.rejected.connect(self.reject)
+        #self.closeButtons.setCenterButtons(True)
 
 
         #self.layout.addWidget(QtWidgets.QSpacerItem(20,40))
+        self.layout.addWidget(self.asrMethodGroup)
         self.layout.addWidget(self.locationGroup)
         self.layout.addWidget(self.calcMethodGroup)
-        self.layout.addLayout(self.closeLayout)
+        #self.layout.addLayout(self.closeLayout)
+        self.layout.addWidget(self.closeButtons)
 
         self.setLayout(self.layout)
 
@@ -319,8 +378,11 @@ def is_connected(hostname, isConnected: list):
     return
 
 if __name__ == "__main__":
+    # holds data for app during runtime (app does not store information otherwise)
+    data = Data()
+
     hostname = "one.one.one.one"
-    isConnected = [True]
+    isConnected = [False]
     checkInternet = multiprocessing.Process(target=is_connected, args=(hostname, isConnected))
     checkInternet.start()
     print("[+] checking internet connectivity...")
@@ -335,7 +397,6 @@ if __name__ == "__main__":
         print("[-] internet connectivity check failed...")
     #print("[+] internet connectivity check finished")
 
-    data = Data()
 
     app = QtWidgets.QApplication([])
 
