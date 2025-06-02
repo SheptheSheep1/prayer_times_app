@@ -201,6 +201,9 @@ class Location:
         self.latitude = latitude
         self.longitude = longitude
         self.description = description
+
+    def __str__(self):
+        return(f"({self.latitude}, {self.longitude})")
     def getLatitude(self):
         return self.latitude
     def getLongitude(self):
@@ -223,14 +226,14 @@ class Location:
         self.latitude = latitude
         self.longitude = longitude
         self.description = desc
+        print(self.description)
     
     def setLocationByQuery(self, query: str):
         geolocator = Nominatim(user_agent='maruf')
         # TODO: Actual exception handling
-        try: 
-            location = geolocator.geocode(query)
-        except Exception as e:
-            raise e
+        location = geolocator.geocode(query)
+        if location is None:
+            print("location is NoneType")
         #return (location.latitude, location.longitude, location.address)
         self.latitude = location.latitude
         self.longitude = location.longitude
@@ -275,12 +278,14 @@ class PrayerTime:
     __description = ""
     CALCULATION_METHOD = CalcMethod()
 
-    __fajr_time=datetime.min
-    __sunrise_time=datetime.min
-    __dhuhr_time=datetime.min
-    __asr_time=datetime.min
-    __maghrib_time=datetime.min
-    __isha_time=datetime.min
+    prayerTimes = dict()
+
+    fajr_time=datetime.min
+    sunrise_time=datetime.min
+    dhuhr_time=datetime.min
+    asr_time=datetime.min
+    maghrib_time=datetime.min
+    isha_time=datetime.min
 
     def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time()), calc_method=CalcMethod(), asr_method=1, loc_desc="", latitude=34.0, longitude=-111.0):
         self.__month = month
@@ -293,7 +298,7 @@ class PrayerTime:
         self.__description = loc_desc
         self.__latitude = latitude
         self.__longitude = longitude
-        self.__calcPrayerTimes()
+        self.prayerTimes = self.__calcPrayerTimes()
     
     def setGPScoordinates(self, latitude: float, longitude: float):
         self.__latitude = latitude
@@ -480,24 +485,24 @@ class PrayerTime:
                 maghrib= self.convertHrs(MAGHRIB),
                 isha= self.convertHrs(ISHA)
                 )
-        self.__fajr_time = prayerTimes["fajr"]
-        self.__sunrise_time = prayerTimes["sunrise"]
-        self.__dhuhr_time = prayerTimes["dhuhr"]
-        self.__asr_time = prayerTimes["asr"]
-        self.__maghrib_time = prayerTimes["maghrib"]
-        self.__isha_time = prayerTimes["isha"]
+        self.fajr_time = prayerTimes["fajr"]
+        self.sunrise_time = prayerTimes["sunrise"]
+        self.dhuhr_time = prayerTimes["dhuhr"]
+        self.asr_time = prayerTimes["asr"]
+        self.maghrib_time = prayerTimes["maghrib"]
+        self.isha_time = prayerTimes["isha"]
 
         return prayerTimes
 
 
     def __str__(self):
         return(
-        f"FAJR: {self.__fajr_time.strftime("%I:%M:%S %p")}"
-        f"\nSUNRISE: {self.__sunrise_time.strftime("%I:%M:%S %p")}"
-        f"\nDHUHR: {self.__dhuhr_time.strftime("%I:%M:%S %p")}"
-        f"\nASR: {self.__asr_time.strftime("%I:%M:%S %p")}"
-        f"\nMAGHRIB: {self.__maghrib_time.strftime("%I:%M:%S %p")}"
-        f"\nISHA: {self.__isha_time.strftime("%I:%M:%S %p")}"
+        f"FAJR: {self.fajr_time.strftime("%I:%M:%S %p")}"
+        f"\nSUNRISE: {self.sunrise_time.strftime("%I:%M:%S %p")}"
+        f"\nDHUHR: {self.dhuhr_time.strftime("%I:%M:%S %p")}"
+        f"\nASR: {self.asr_time.strftime("%I:%M:%S %p")}"
+        f"\nMAGHRIB: {self.maghrib_time.strftime("%I:%M:%S %p")}"
+        f"\nISHA: {self.isha_time.strftime("%I:%M:%S %p")}"
         )
 
     
@@ -519,6 +524,9 @@ class PrayerTime:
         time = datetime(self.__year, self.__month, self.__day, hours, minutes, seconds)
         #return time.strftime("%H:%M:%S
         return time
+    
+    def getPrayertimes(self) -> dict:
+        return self.prayerTimes
 
     def getGPSCoordinates(self) -> tuple:
         return self.__latitude, self.__longitude
