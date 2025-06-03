@@ -7,16 +7,17 @@ import time
 
 
 class Data():
-    def __init__(self, datetime: datetime):
-        print(datetime)
-        yesterday = datetime + timedelta(days=-1)
-        tomorrow = datetime + timedelta(days=1)
-        self.prayerYesterday = PrayerTime(yesterday.month, yesterday.day, yesterday.year)
-        self.prayerToday = PrayerTime(datetime.month, datetime.day, datetime.year)
-        self.prayerTomorrow = PrayerTime(tomorrow.month, tomorrow.day, tomorrow.year)
+    def __init__(self, grok: datetime):
+        self.location = Location()
+        #print("Data1: ",grok)
+        yesterday = grok + timedelta(days=-1)
+        tomorrow = grok + timedelta(days=1)
+        self.todayDate = grok
+        #print("self",self.todayDate)
+        self.yesterdayDate = yesterday
+        self.tomorrowDate = tomorrow
 
         #self.location = {"latitude": 0.0, "longitude": 0.0, "description": ""}
-        self.location = Location()
 
         self.calcMethod = CalcMethod()
 
@@ -24,11 +25,13 @@ class Data():
         
         self.locationMethod = 0
         self.query = ""
-        self.todayDate = datetime
-        self.yesterdayDate = yesterday
-        self.tomorrowDate = tomorrow
         system_time = time.time()
         self.utc_offset = ((datetime.fromtimestamp(system_time).timestamp()) - datetime.fromtimestamp(system_time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
+        #print("UTC offset: ",self.utc_offset)
+
+        self.prayerYesterday = PrayerTime(self.yesterdayDate.month, self.yesterdayDate.day, self.yesterdayDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        self.prayerToday = PrayerTime(self.todayDate.month, self.todayDate.day, self.todayDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        self.prayerTomorrow = PrayerTime(self.tomorrowDate.month, self.tomorrowDate.day, self.tomorrowDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
 
     def genPrayerTimes(self):
         self.prayerYesterday = PrayerTime(self.yesterdayDate.month, self.yesterdayDate.day, self.yesterdayDate.year, self.getUTCOffset(), self.getCalcMethod(), self.getAsrMethod(), self.getLocation().getDescription(), self.getLocation().getLatitude(), self.getLocation().getLongitude())
@@ -59,19 +62,19 @@ class Data():
     def setQuery(self, query: str):
         self.query = query
 
-    def setDate(self, datetime: datetime):
-        self.todayDate = datetime
-        self.yesterdayDate = datetime + timedelta(days=-1)
-        self.tomorrowDate = datetime + timedelta(days=1)
+    def setDate(self, dateTime: datetime):
+        self.todayDate = dateTime
+        self.yesterdayDate = dateTime + timedelta(days=-1)
+        self.tomorrowDate = dateTime + timedelta(days=1)
 
-    def setTodayDate(self, datetime: datetime):
-        self.todayDate = datetime
+    def setTodayDate(self, dateTime: datetime):
+        self.todayDate = dateTime
 
-    def setYesterdayDate(self, datetime: datetime):
-        self.yesterdayDate = datetime
+    def setYesterdayDate(self, dateTime: datetime):
+        self.yesterdayDate = dateTime
 
-    def setTomorrowDate(self, datetime: datetime):
-        self.tomorrowDate = datetime
+    def setTomorrowDate(self, dateTime: datetime):
+        self.tomorrowDate = dateTime
 
     def getPrayerYesterday(self) -> PrayerTime:
         return self.prayerYesterday

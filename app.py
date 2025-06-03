@@ -49,7 +49,7 @@ def getDefaultConfig(latitude: float, longitude: float) -> Dict:
     day = datetime.now().day
     year = datetime.now().year
     utc_offset = getLocalUTCOffset(time.time())
-    asr_method = 2
+    asr_method = 1
     description = "Custom"
     latitude = latitude
     longitude = longitude
@@ -287,7 +287,7 @@ class PrayerTime:
     maghrib_time=datetime.min
     isha_time=datetime.min
 
-    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time()), calc_method=CalcMethod(), asr_method=1, loc_desc="", latitude=34.0, longitude=-111.0):
+    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time()), calc_method=CalcMethod(), asr_method=1, loc_desc="", latitude=34.5, longitude=-111.0):
         self.__month = month
         self.__day = day
         self.__year = year
@@ -438,7 +438,7 @@ class PrayerTime:
         return hourAngles
     
     # params: jd: julian days, Lat: latitude, returns a double representing decimal hours after solar zenith for asr
-    def __calcAsrDiff(self, jd, Lat) -> float:
+    def __calcAsrDiff(self, jd, Lat, asrMethod) -> float:
         d = jd-2451545.0
 
         g = 357.529 + 0.98560028* d
@@ -450,10 +450,20 @@ class PrayerTime:
         D = math.degrees(math.asin(math.sin(math.radians(e))* math.sin(math.radians(L))))  # declination of the Sun
         dPrint(f"Declination of the Sun: {D}")
         
-        top = math.sin(math.radians(math.degrees(self.arccot(2+math.tan(math.radians(Lat-D))))-math.degrees((math.sin(math.radians(Lat)))*math.sin(math.radians(D)))))
-        bottom = math.cos(math.radians(Lat))*math.cos(math.radians(D))
-        asr_del = (1/15)*(math.degrees(math.acos(top/bottom)))
-        return asr_del
+        #top = math.sin(math.radians(math.degrees(self.arccot(asrMethod+math.tan(math.radians(Lat-D))))-math.degrees((math.sin(math.radians(Lat)))*math.sin(math.radians(D)))))
+        #bottom = math.cos(math.radians(Lat))*math.cos(math.radians(D))
+        #asr_del = (1/15)*(math.degrees(math.acos(top/bottom)))
+                # Asr shadow length formula
+        angle = math.degrees(self.arccot(asrMethod + math.tan(abs(math.radians(Lat - D)))))
+
+        # Compute hour angle
+        numerator = math.sin(math.radians(angle)) - math.sin(math.radians(Lat)) * math.sin(math.radians(D))
+        denominator = math.cos(math.radians(Lat)) * math.cos(math.radians(D))
+        hour_angle = math.acos(numerator / denominator)
+
+        # Convert to time (1 hour = 15 degrees)
+        asr_diff_hours = math.degrees(hour_angle) / 15.0
+        return asr_diff_hours
     
     # returns dict with prayertimes as datetime objects
     def __calcPrayerTimes(self) -> dict:
@@ -472,7 +482,7 @@ class PrayerTime:
         SUNRISE = TT - hourAngles["sunrise"] / 15
         DHUHR = TT + 2/60
         # ASR = TT + hourAngles["asr"] / 15
-        ASR = DHUHR + self.__calcAsrDiff(JD, self.__latitude)
+        ASR = DHUHR + self.__calcAsrDiff(JD, self.__latitude, self.ASR_METHOD)
         MAGHRIB = TT + (hourAngles["maghrib"] / 15)
         ISHA = TT + hourAngles["isha"] / 15
         

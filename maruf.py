@@ -1,18 +1,18 @@
 import sys
 import socket
-from data import Data
+import pray_data
 from PySide6 import QtCore, QtWidgets, QtGui, QtSvgWidgets
 import app as zapp
 import random
 import string
-from datetime import datetime
+from datetime import datetime, time
 import multiprocessing
 import CalcMethods
 
 #prayerTime = app.PrayerTime()
 #print(prayerTime)
 class MyWidget(QtWidgets.QWidget):
-    def __init__(self, isNetwork: bool, data: Data):
+    def __init__(self, isNetwork: bool, data: pray_data.Data):
         super().__init__()
         self.data = data
         self.strftime = ""
@@ -24,8 +24,9 @@ class MyWidget(QtWidgets.QWidget):
         else:
             print("no net")
             self.data.setLocationMethod(2)
-            self.location.setLocationManually(33.4838, -112.07404)
+            self.location.setLocationManually(33.5, -112.1)
         self.data.setLocation(self.location)
+        self.data.genPrayerTimes()
         print(f"location: {self.data.getLocation()}")
         self.setWindowTitle("Ma'ruf")
         self.__initUI()
@@ -114,8 +115,10 @@ class MyWidget(QtWidgets.QWidget):
         #subtitle
         self.subtitleLayout = QtWidgets.QHBoxLayout()
         #self.leftDate = QtWidgets.QLabel("September 30, 2025", alignment=QtCore.Qt.AlignCenter)
+        #print("datetime:",self.data.getTodayDate())
         self.leftDate = QtWidgets.QLabel(self.data.getYesterdayDate().strftime(self.dateFtime), alignment=QtCore.Qt.AlignCenter)
         self.centerDate = QtWidgets.QLabel(self.data.getTodayDate().strftime(self.dateFtime), alignment=QtCore.Qt.AlignCenter)
+        #print("center:",self.data.getTodayDate())
         self.rightDate = QtWidgets.QLabel(self.data.getTomorrowDate().strftime(self.dateFtime), alignment=QtCore.Qt.AlignCenter)
         self.centerDate.setObjectName("mainDate")
         self.leftDate.setObjectName("otherDate")
@@ -261,9 +264,10 @@ class MyWidget(QtWidgets.QWidget):
         self.dialog.open()
 
     def updateTimes(self):
+        #print(self.data.getAsrMethod())
         # update location
         self.regionLoc.setText(self.data.getLocation().getDescription())
-        print("set",self.data.getLocation().getDescription())
+        #print("set",self.data.getLocation().getDescription())
         # update dates
         self.leftDate.setText(self.data.getYesterdayDate().strftime(self.dateFtime))
         self.centerDate.setText(self.data.getTodayDate().strftime(self.dateFtime))
@@ -301,9 +305,9 @@ class MyWidget(QtWidgets.QWidget):
 
     def dialog_finished(self):
         self.data.setCalcMethod(self.dialog.calc_dropdown.currentData())
-        print(data.getCalcMethod())
+        #print(data.getCalcMethod())
         self.data.setAsrMethod(self.dialog.asrMethodDropdown.currentData())
-        print(f"asr: {self.data.getAsrMethod()}")
+        #print(f"asr: {self.data.getAsrMethod()}")
         self.threadz = QtCore.QThread()
         self.worker = None
         match(self.dialog.locationBGroup.checkedId()):
@@ -332,7 +336,7 @@ class MyWidget(QtWidgets.QWidget):
             #self.threadz.finished.connect(self.threadz.deleteLater)
 
             self.threadz.start()
-        print(f"Coords: {self.data.getLocation(), self.data.getLocation().getDescription()}")
+        print(f"Coords: {self.data.getLocation()}, {self.data.getLocation().getDescription()}")
         print("finished")
         #self.data.setPrayerYesterday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         #self.data.setPrayerTomorrow(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
@@ -363,7 +367,7 @@ class MyWidget(QtWidgets.QWidget):
 
 
 class SettingsDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None, data=Data(datetime.now())):
+    def __init__(self, parent=None, data=pray_data.Data(datetime.now())):
         super().__init__(parent)
         self.setStyleSheet('''
     QLineEdit:disabled {
@@ -626,28 +630,31 @@ def is_connected(hostname, isConnected: list):
         host = socket.gethostbyname(hostname)
         s = socket.create_connection((host, 80), 2)
         s.close()
-        isConnected[0] = True
+        isConnected.value = True
         return
     except Exception:
         pass # ignore errors and return False
-    isConnected[0] = False
-    return
+    isConnected.value = False
+    #return
 
 if __name__ == "__main__":
+    midnight_today = datetime.combine(datetime.today(), time.min)
     # holds data for app during runtime (app does not store information otherwise)
-    data = Data(datetime.now())
+    data = pray_data.Data(midnight_today)
+    #print("midnight: ",data.getTodayDate())
 
     hostname = "one.one.one.one"
-    isConnected = [False]
+    #isConnected = [False]
+    isConnected = multiprocessing.Value('b', False)
     checkInternet = multiprocessing.Process(target=is_connected, args=(hostname, isConnected))
     checkInternet.start()
     print("[+] checking internet connectivity...")
-    checkInternet.join(3)
+    checkInternet.join(4)
     if checkInternet.is_alive():
         print("[-] dns lookup timeout, terminating process...")
         checkInternet.kill()
         checkInternet.join()
-    if isConnected[0]:
+    if isConnected.value:
         print("[+] internet connectivity check succeeded...")
     else:
         print("[-] internet connectivity check failed...")
@@ -656,7 +663,7 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication([])
 
-    widget = MyWidget(isConnected[0], data)
+    widget = MyWidget(isConnected.value, data)
     widget.setFixedSize(800, 600)
     widget.show()
 
