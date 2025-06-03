@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="Layer_1"
+   version="1.1"
+   viewBox="0 0 3000 3000"
+   sodipodi:docname="maruf_icon.svg"
+   width="3000"
+   height="3000"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   inkscape:export-filename="maruf_icon.png"
+   inkscape:export-xdpi="4.0960002"
+   inkscape:export-ydpi="4.0960002"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="0.084357839"
+     inkscape:cx="-136.32402"
+     inkscape:cy="1766.2852"
+     inkscape:window-width="1600"
+     inkscape:window-height="863"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_1" />
+  <!-- Generator: Adobe Illustrator 29.5.1, SVG Export Plug-In . SVG Version: 2.1.0 Build 141)  -->
+  <defs
+     id="defs1">
+    <linearGradient
+       id="linearGradient9"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#08592d;stop-opacity:1;"
+         offset="0.59218705"
+         id="stop9" />
+      <stop
+         style="stop-color:#0a4327;stop-opacity:1;"
+         offset="0.84174377"
+         id="stop10" />
+    </linearGradient>
+    <style
+       id="style1">
+      .st0 {
+        fill: #062642;
+      }
+
+      .st1 {
+        fill: #f7f7f7;
+      }
+    </style>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient9"
+       id="radialGradient10"
+       cx="1500"
+       cy="1500"
+       fx="1500"
+       fy="1500"
+       r="1500"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <rect
+     class="st0"
+     width="3000"
+     height="3000"
+     id="rect1"
+     x="0"
+     y="0"
+     style="mix-blend-mode:normal;fill:url(#radialGradient10);fill-rule:nonzero;stroke-width:0.774595"
+     ry="608.26343" />
+  <path
+     class="st1"
+     d="m 1884.25,1994.75 c -485.5,0 -879,-393.5 -879,-879 0,-485.5 88.2,-438.9 232.5,-595.5 -414.70001,121.9 -717.50001,505.3 -717.50001,959.5 0,454.2 447.7,1000 1000.00001,1000 552.3,0 837.6,-302.8 959.5,-717.5 -156.6,144.3 -365.8,232.5 -595.5,232.5 z"
+     id="path1" />
+  <polygon
+     class="st1"
+     points="2795.8,475.2 2763,968.9 2306.3,1091.3 2745.8,1255.9 2723,1741.6 3033.9,1363.9 3492,1535.5 3229.5,1126.3 3527.8,764 3071.1,886.4 "
+     id="polygon1"
+     transform="translate(-999.95001,-0.05)" />
+</svg>
