@@ -662,8 +662,10 @@ if __name__ == "__main__":
 
 
     app = QtWidgets.QApplication([])
+    app.setWindowIcon(QtGui.QIcon("./resources/maruf_icon.png"))
 
     widget = MyWidget(isConnected.value, data)
+    widget.setWindowIcon(QtGui.QIcon("./resources/maruf_icon.png"))
     widget.setFixedSize(800, 600)
     widget.show()
 
