@@ -18,9 +18,13 @@ Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for ca
 </p>
 
 ## TODOs
-- Add UTC Offset change option
-- Change UTC Offset when changing location based on coordinates
-- Include fonts maybe or have better system font defaults for windows
+- [ ] Add UTC Offset change option
+- [ ] Change UTC Offset when changing location based on coordinates
+- [ ] Include fonts maybe or have better system font defaults for windows
+- [ ] Implement changing time/date display format through `strftime()`
+- [ ] Query character limits/regex
+- [ ] Add timeout to ip and query threads when loading and exception handling
+- [ ] Set character limits on region widget
 
 ## Credits
 - Would not be possible without the information provided by [Radhi Fadlillah](https://radhifadlillah.com/) and [prayertimes.org](https://www.prayertimes.org/en/prayer-times-calculation-methodology/)

@@ -8,6 +8,14 @@ import string
 from datetime import datetime, time
 import multiprocessing
 import CalcMethods
+import os
+
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(base_path, relative_path)
+
 
 #prayerTime = app.PrayerTime()
 #print(prayerTime)
@@ -134,7 +142,7 @@ class MyWidget(QtWidgets.QWidget):
         self.midLayout = QtWidgets.QVBoxLayout()
         #fajr time
         self.fajr = QtWidgets.QHBoxLayout()
-        self.fajrSvg = QtSvgWidgets.QSvgWidget("./resources/real/fajr.svg")
+        self.fajrSvg = QtSvgWidgets.QSvgWidget(resource_path("./resources/real/fajr.svg"))
         self.fajrSvg.setFixedSize(300, 80) #forces fixed for other mainTimes as well
         self.fajr.addWidget(self.fajrSvg, alignment=QtCore.Qt.AlignLeft)
         #self.fajrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -144,7 +152,7 @@ class MyWidget(QtWidgets.QWidget):
         self.fajr.addWidget(self.fajrTime)
         #sunrise time
         self.sunrise = QtWidgets.QHBoxLayout()
-        self.sunriseSvg = QtSvgWidgets.QSvgWidget("./resources/real/sunrise.svg")
+        self.sunriseSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/sunrise.svg"))
         self.sunriseSvg.setFixedSize(300, 80)
         self.sunrise.addWidget(self.sunriseSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.sunriseTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -154,7 +162,7 @@ class MyWidget(QtWidgets.QWidget):
         #self.sunrise.addWidget(self.sunriseTime)
         #dhuhr time
         self.dhuhr = QtWidgets.QHBoxLayout()
-        self.dhuhrSvg = QtSvgWidgets.QSvgWidget("./resources/real/dhuhr.svg")
+        self.dhuhrSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/dhuhr.svg"))
         self.dhuhrSvg.setFixedSize(300, 80)
         self.dhuhr.addWidget(self.dhuhrSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.dhuhrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -164,7 +172,7 @@ class MyWidget(QtWidgets.QWidget):
         #self.dhuhr.addWidget(self.dhuhrTime)
         #asr time
         self.asr = QtWidgets.QHBoxLayout()
-        self.asrSvg = QtSvgWidgets.QSvgWidget("./resources/real/asr.svg")
+        self.asrSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/asr.svg"))
         self.asrSvg.setFixedSize(300, 80)
         self.asr.addWidget(self.asrSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.asrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -173,7 +181,7 @@ class MyWidget(QtWidgets.QWidget):
         self.asr.addWidget(self.asrTime, 25)
         #maghrib time
         self.maghrib = QtWidgets.QHBoxLayout()
-        self.maghribSvg = QtSvgWidgets.QSvgWidget("./resources/real/maghrib.svg")
+        self.maghribSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/maghrib.svg"))
         self.maghribSvg.setFixedSize(300, 80)
         self.maghrib.addWidget(self.maghribSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.maghribTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
@@ -183,9 +191,9 @@ class MyWidget(QtWidgets.QWidget):
         self.maghrib.addWidget(self.maghribTime)
         #isha time
         self.isha = QtWidgets.QHBoxLayout()
-        self.ishaSvg = QtSvgWidgets.QSvgWidget("./resources/real/isha.svg")
+        self.ishaSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/isha.svg"))
         self.ishaSvg.setFixedSize(300, 80)
-        self.isha.addWidget(QtSvgWidgets.QSvgWidget("./resources/real/isha.svg"), 75, alignment=QtCore.Qt.AlignLeft)
+        self.isha.addWidget(self.ishaSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.ishaTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.ishaTime = QtWidgets.QLabel(self.data.prayerToday.isha_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.ishaTime.setObjectName("mainPrayerTime")
@@ -238,7 +246,7 @@ class MyWidget(QtWidgets.QWidget):
 
         # bottom
         self.bottomLayout = QtWidgets.QHBoxLayout()
-        self.settingsButton = QtWidgets.QPushButton(QtGui.QIcon("./resources/gear.png"), "Settings")
+        self.settingsButton = QtWidgets.QPushButton(QtGui.QIcon(resource_path("resources/gear.png")), "Settings")
         self.settingsButton.setIconSize(QtCore.QSize(24,24))
         self.settingsButton.setObjectName("settingsButton")
         self.bottomLayout.addWidget(self.settingsButton, alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom)
@@ -582,7 +590,7 @@ class LoadingDialog(QtWidgets.QDialog):
         self.setModal(True)
         self.setWindowTitle("Loading")
         self.spinner_label = QtWidgets.QLabel(self)
-        self.movie = QtGui.QMovie("./resources/rolling.gif")
+        self.movie = QtGui.QMovie(resource_path("resources/rolling.gif"))
         self.spinner_label.setMovie(self.movie)
         self.movie.setScaledSize(QtCore.QSize(32,32))
         self.movie.start()
@@ -662,10 +670,10 @@ if __name__ == "__main__":
 
 
     app = QtWidgets.QApplication([])
-    app.setWindowIcon(QtGui.QIcon("./resources/maruf_icon.png"))
+    app.setWindowIcon(QtGui.QIcon(resource_path("resources/maruf_icon.png")))
 
     widget = MyWidget(isConnected.value, data)
-    widget.setWindowIcon(QtGui.QIcon("./resources/maruf_icon.png"))
+    widget.setWindowIcon(QtGui.QIcon(resource_path("resources/maruf_icon.png")))
     widget.setFixedSize(800, 600)
     widget.show()
 
