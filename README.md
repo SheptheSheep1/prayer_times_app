@@ -23,8 +23,12 @@ Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for ca
 - [ ] Include fonts maybe or have better system font defaults for windows
 - [ ] Implement changing time/date display format through `strftime()`
 - [ ] Query character limits/regex
-- [ ] Add timeout to ip and query threads when loading and exception handling
+- [ ] Add timeout to ip and query threads when loading and exception handling if request doesn't work
 - [ ] Set character limits on region widget
+- [ ] Handling system color or set actual dark mode
+- [ ] Custom Calculation Method for fajr and isha
+- [x] Implement TOML persistent config
+- [!] Handle no rw access in directory
 
 ## Credits
 - Would not be possible without the information provided by [Radhi Fadlillah](https://radhifadlillah.com/) and [prayertimes.org](https://www.prayertimes.org/en/prayer-times-calculation-methodology/)

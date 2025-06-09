@@ -10,12 +10,16 @@ import multiprocessing
 import CalcMethods
 import os
 
-
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    if hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS  # For PyInstaller-like environments
+    elif '__compiled__' in globals():
+        base_path = os.path.dirname(sys.executable)
+    else:
+        #return os.path.join(os.path.abspath("."), relative_path)
+        #return relative_path
+        base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
-
 
 #prayerTime = app.PrayerTime()
 #print(prayerTime)
@@ -375,7 +379,7 @@ class MyWidget(QtWidgets.QWidget):
 
 
 class SettingsDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None, data=pray_data.Data(datetime.now())):
+    def __init__(self, parent=None, data=pray_data.Data(datetime.now(), pray_data.AppConfig())):
         super().__init__(parent)
         self.setStyleSheet('''
     QLineEdit:disabled {
@@ -631,7 +635,6 @@ class WebRequestWorker(QtCore.QObject):
         self.finished.emit(self.location)
 
 
-
 def is_connected(hostname, isConnected: list):
     try:
         # see if we can do a dns lookup, return True if it can happen
@@ -646,18 +649,19 @@ def is_connected(hostname, isConnected: list):
     #return
 
 if __name__ == "__main__":
+    appConfig = pray_data.AppConfig()
     midnight_today = datetime.combine(datetime.today(), time.min)
     # holds data for app during runtime (app does not store information otherwise)
-    data = pray_data.Data(midnight_today)
+    data = pray_data.Data(midnight_today, appConfig)
     #print("midnight: ",data.getTodayDate())
 
-    hostname = "one.one.one.one"
+    hostname = "one.one.one.one" # check for 1.1.1.1 to dns lookup
     #isConnected = [False]
     isConnected = multiprocessing.Value('b', False)
     checkInternet = multiprocessing.Process(target=is_connected, args=(hostname, isConnected))
     checkInternet.start()
     print("[+] checking internet connectivity...")
-    checkInternet.join(4)
+    checkInternet.join(4) # allow 4 seconds for connection to be made, otherwise kill
     if checkInternet.is_alive():
         print("[-] dns lookup timeout, terminating process...")
         checkInternet.kill()
@@ -677,4 +681,6 @@ if __name__ == "__main__":
     widget.setFixedSize(800, 600)
     widget.show()
 
-    sys.exit(app.exec())
+    app.exec()
+    data.exportConfigToFile()
+    sys.exit()
