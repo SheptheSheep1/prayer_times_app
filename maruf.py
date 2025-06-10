@@ -5,10 +5,12 @@ from PySide6 import QtCore, QtWidgets, QtGui, QtSvgWidgets
 import app as zapp
 import random
 import string
-from datetime import datetime, time
+from datetime import datetime, time, UTC
 import multiprocessing
 import CalcMethods
 import os
+from zoneinfo import ZoneInfo, available_timezones
+from timezonefinder import TimezoneFinder
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -40,6 +42,7 @@ class MyWidget(QtWidgets.QWidget):
         self.data.setLocation(self.location)
         self.data.genPrayerTimes()
         print(f"location: {self.data.getLocation()}")
+        print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
         self.setWindowTitle("Ma'ruf")
         self.__initUI()
         self.init_style()
@@ -349,12 +352,26 @@ class MyWidget(QtWidgets.QWidget):
 
             self.threadz.start()
         print(f"Coords: {self.data.getLocation()}, {self.data.getLocation().getDescription()}")
-        print("finished")
+        print("location finished")
+        match self.dialog.utcOffsetBGroup.checkedId():
+            case -1:
+                print("no tz checked")
+            case 0:
+                print("tz by loc checked")
+            case 1:
+                print("manual tz chosen")
+                #self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
+                self.data.setUTCOffset(self.dialog.utcOffsetInput.currentData().total_seconds()/3600.0)
+                self.data.setTzDesc(self.dialog.utcOffsetInput.currentText())
+                #print(self.dialog.utcOffsetInput.currentData().total_seconds()/3600)
+                print(self.data.getUTCOffset(), self.data.getTzDesc())
+        self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
         #self.data.setPrayerYesterday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         #self.data.setPrayerTomorrow(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         #self.data.setPrayerToday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         self.data.setDate(self.dialog.get_selected_datetime())
         print(f"date: {self.data.getTodayDate()}")
+        print()
         self.recalculateData()
         self.updateTimes()
     
@@ -440,6 +457,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.calc_dropdown = QtWidgets.QComboBox()
         for name, method in CalcMethods.methods.items():
             self.calc_dropdown.addItem(str(name), userData=method)
+        self.calc_dropdown.addItem(str(self.data.getCalcMethod().name), userData=self.data.getCalcMethod())
         self.calc_dropdown.setCurrentText(str(self.data.getCalcMethod()))
         self.calcMethodVBox.addWidget(self.calc_dropdown)
         self.calcMethodGroup.setLayout(self.calcMethodVBox)
@@ -496,6 +514,36 @@ class SettingsDialog(QtWidgets.QDialog):
         self.locationVBox.addWidget(self.latitude)
         self.locationVBox.addWidget(self.longitude)
 
+        # Timezone/UTC Offset
+        self.utcOffsetGroup = QtWidgets.QGroupBox("Timezone")
+        self.tzByLocation = QtWidgets.QRadioButton("Set Timezone By Location")
+        self.tzByHand = QtWidgets.QRadioButton("Set Timezone Manually")
+        # button group
+        self.utcOffsetBGroup = QtWidgets.QButtonGroup()
+        self.utcOffsetBGroup.addButton(self.tzByLocation, id=0)
+        self.utcOffsetBGroup.addButton(self.tzByHand, id=1)
+        self.utcOffsetBGroup.setExclusive(True)
+        # combo box
+        self.utcOffsetInput = QtWidgets.QComboBox()
+        self.utcOffsetInput.setEnabled(False)
+        self.utcOffsetInput.setToolTip("Enable Set Timezone Manually to Edit")
+        self.populate_timezones()
+        self.utcOffsetBGroup.button(self.data.getTzMethod()).setChecked(True)
+        self.utcOffsetBGroup.buttonClicked.connect(self.update_tz_options)
+        match self.data.getTzMethod():
+            case 0:
+                pass
+            case 1:
+                self.utcOffsetInput.setEnabled(True)
+                self.utcOffsetInput.setCurrentText(self.data.getTzDesc())
+
+        # VBox
+        self.utcOffsetVBox = QtWidgets.QVBoxLayout()
+        self.utcOffsetGroup.setLayout(self.utcOffsetVBox)
+        self.utcOffsetVBox.addWidget(self.tzByLocation)
+        self.utcOffsetVBox.addWidget(self.tzByHand)
+        self.utcOffsetVBox.addWidget(self.utcOffsetInput)
+
 
         # cancel/save button
         #self.save_button = QtWidgets.QPushButton("Save")
@@ -518,9 +566,31 @@ class SettingsDialog(QtWidgets.QDialog):
         self.layout.addWidget(self.locationGroup)
         self.layout.addWidget(self.calcMethodGroup)
         #self.layout.addLayout(self.closeLayout)
+        self.layout.addWidget(self.utcOffsetGroup)
         self.layout.addWidget(self.closeButtons)
 
         self.setLayout(self.layout)
+
+    def populate_timezones(self):
+        #now = datetime.utcnow()
+        now = datetime.now(UTC).now()
+
+        tz_entries = []
+        for name in sorted(available_timezones()):
+            try:
+                tz = ZoneInfo(name)
+                offset = now.astimezone(tz).utcoffset()
+                if offset is not None:
+                    hours = offset.total_seconds() / 3600
+                    display = f"(UTC{'+' if hours >= 0 else ''}{hours:0.1f}) {name}"
+                    tz_entries.append((offset, display))
+            except Exception:
+                continue  # skip broken ones
+        # Sort by offset then by name
+        tz_entries.sort()
+        for utc_timedelta, display in tz_entries:
+            self.utcOffsetInput.addItem(display, userData=utc_timedelta)
+
 
     def update_location_options(self):
         is_custom = self.byHand.isChecked()
@@ -529,6 +599,12 @@ class SettingsDialog(QtWidgets.QDialog):
         self.latitude.setEnabled(is_custom)
         self.longitude.setEnabled(is_custom)
         self.query.setEnabled(is_query)
+
+    def update_tz_options(self):
+        #is_location = self.tzByLocation.isChecked()
+        is_custom = self.tzByHand.isChecked()
+
+        self.utcOffsetInput.setEnabled(is_custom)
         
     def setup_ui(self):
         # def not copy/p
@@ -585,8 +661,6 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
 
-
-
 class LoadingDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, display="Loading..."):
         super().__init__(parent)
@@ -605,17 +679,7 @@ class LoadingDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
 
-#class byIpWorker(QtCore.QThread):
-#    finished = QtCore.Signal(str)
-#    def run(self):
-#        location = zapp.Location()
-#        location.setLocationByIP()
-#        self.finished.emit(location)
-#class byQueryWorker(QtCore.QThread):
-#    finished = QtCore.Signal(str)
-#    def run(self):
-#        location = zapp.Location()
-#        location.setLocationByQuery()
+
 class WebRequestWorker(QtCore.QObject):
     finished = QtCore.Signal(object)
 
@@ -635,6 +699,8 @@ class WebRequestWorker(QtCore.QObject):
         self.finished.emit(self.location)
 
 
+
+# internet connection check
 def is_connected(hostname, isConnected: list):
     try:
         # see if we can do a dns lookup, return True if it can happen

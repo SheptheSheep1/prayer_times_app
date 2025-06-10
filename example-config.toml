@@ -1,0 +1,16 @@
+[general]
+dark_mode = true
+timezone_utc_offset = -7.0
+timezone_description = "America/Phoenix"
+
+[prayer_times]
+method_name = "From File"
+fajr_offset = 15
+isha_offset = 15
+mahgrib_to_isha_90 = false
+asr_method = 2
+
+[location]
+latitude = 34.1434
+longitude = -111.123
+region_description = "Phoenix, AZ"

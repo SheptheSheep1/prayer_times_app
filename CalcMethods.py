@@ -35,8 +35,8 @@ class MethodName(Enum):
 methods = {
     "MWL": CalcMethod("MWL", 18.0, 17.0, False),
     "ISNA": CalcMethod("ISNA", 15.0, 15.0, False),
-    "Umm al-Qura": CalcMethod("Umm al-Qura", 18.5, 90, True),
-    "Gulf": CalcMethod("Gulf", 19.5, 90, True),
+    "Umm al-Qura": CalcMethod("Umm al-Qura", 18.5, 0.0, True),
+    "Gulf": CalcMethod("Gulf", 19.5, 0.0, True),
     "Algerian": CalcMethod("Algerian", 18.0, 17.0, False),
     "Karachi ": CalcMethod("Karachi", 18.0, 18.0, False),
     "Diyanet": CalcMethod("Diyanet", 18.0, 17.0, False),

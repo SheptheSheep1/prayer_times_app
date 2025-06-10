@@ -6,17 +6,17 @@ LAT = 33.4306 ## latitude
 LONG = -111.9256 ## longitude
 H = 1787.0 ## elevation
 ## H = 0
-Z = 4.5 ## utc timezone
+Z = -7.0 ## utc timezone
 SF = 2 ## Hanafi asr
 ## University of Islamic Sciences, Karachi Angle for Afghanistan
 FAJR_ANGLE = 15
 ISHA_ANGLE = 15
 
 ## Calculate Julian days at local time
-Y = 2024
-M = 9
-D = 21
-H_jd = 16.000
+Y = 2025
+M = 6
+D = 9
+H_jd = 0.0
 m = 0 
 s = 0
 Z = -7.0 
