@@ -57,6 +57,7 @@ jobs:
           enable-plugins: pyside6
           include-data-dir: |
             ${{ env.SITE_PACKAGES }}/numpy=numpy
+            resources=resources
           include-raw-dir: |
             ${{ env.SITE_PACKAGES }}/timezonefinder=timezonefinder
 
