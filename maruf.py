@@ -9,6 +9,7 @@ from datetime import datetime, time, UTC
 import multiprocessing
 import CalcMethods
 import os
+import qdarktheme
 from zoneinfo import ZoneInfo, available_timezones
 from timezonefinder import TimezoneFinder
 
@@ -23,6 +24,7 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+
 #prayerTime = app.PrayerTime()
 #print(prayerTime)
 class MyWidget(QtWidgets.QWidget):
@@ -31,6 +33,7 @@ class MyWidget(QtWidgets.QWidget):
         self.data = data
         self.strftime = ""
         self.location = zapp.Location()
+        print("dark mode:",self.data.getDarkMode())
         if isNetwork:
             print("net")
             self.data.setLocationMethod(0)
@@ -47,60 +50,112 @@ class MyWidget(QtWidgets.QWidget):
         self.__initUI()
         self.init_style()
 
-    def init_style(self):
-        self.setStyleSheet( """
-            QPushButton#another_button {background-color:green; color:black; border-radius: 13px;}
-            QLabel {}
-            QLabel#nonmain {background-color:#262626}
-            QLabel#mainTime {background-color:#262626;
-                           font-size: 24px;}
-            QLabel#title{
-                            font-family: Helvetica;
-                            font-size: 36px;
-                            padding-left: 15px;
-                        }
-            QLabel#region{
-                            font-family: Helvetica;
-                            font-size: 22px;
-                            color: #848080;
-                            padding-right: 15px;
-                            padding-top: 15px;
-                            padding-bottom: 5px;
-                        }
-            QLabel#leftTime{
-                            font-family: Helvetica;
-                           }
-            QLabel#mainPrayerTime{
-                           font-size: 20px;
-                           background-color: #262626;
-                           padding-right: 15px;}
-            QLabel#region2{
-                           font-family: Helvetica;
-                           font-size: 14px;
-                           color: #848080;
-                           padding-right: 15px;
-                        }
-            QPushButton {
-                            color: #cccccc;
-                            font-size: 20px;
-                            font-family: Helvetica;
-                            font-weight: normal;
-                            margin-right: 6px;
-                            margin-bottom: 6px;
-                            padding: 5px;
+    def is_dark_theme(self):
+        return self.data.getDarkMode()
 
-            }
-            QLabel#mainDate{
-                            color: #FFFFFF;
-                            font-size: 16px;
-                            font-family: Helvetica;
-                            font-weight: normal;
-                            padding-bottom: 4px;
-            }
-            QLabel#otherDate{
-                            font-size: 14px;
-            }
-        """)
+    def init_style(self):
+        if self.data.getDarkMode() is True:
+            qdarktheme.setup_theme("dark")
+            self.setStyleSheet( """
+                QPushButton#another_button {background-color:green; color:black; border-radius: 13px;}
+                QLabel {border-radius: 0px}
+                QLabel#mainTime {
+                               font-size: 24px;}
+                QLabel#title{
+                                font-family: Helvetica;
+                                font-size: 36px;
+                                padding-left: 15px;
+                            }
+                QLabel#region{
+                                font-family: Helvetica;
+                                font-size: 22px;
+                                padding-right: 15px;
+                                padding-top: 15px;
+                                padding-bottom: 5px;
+                            }
+                QLabel#leftTime{
+                                font-family: Helvetica;
+                               }
+                QLabel#mainPrayerTime{
+                               font-size: 18px;
+                               background-color:#262626;
+                               padding-right: 15px;
+                               }
+                QLabel#region2{
+                               font-family: Helvetica;
+                               font-size: 14px;
+                               padding-right: 15px;
+                            }
+                QPushButton {
+                                font-size: 16px;
+                                font-family: Helvetica;
+                                font-weight: normal;
+                                margin-right: 6px;
+                                margin-bottom: 6px;
+                                padding: 5px;
+
+                }
+                QLabel#mainDate{
+                                font-size: 16px;
+                                font-family: Helvetica;
+                                font-weight: normal;
+                                padding-bottom: 4px;
+                }
+                QLabel#otherDate{
+                                font-size: 14px;
+                }
+            """)
+        else:
+            qdarktheme.setup_theme("light")
+            self.setStyleSheet("""
+                QPushButton#another_button {background-color:green; color:black; border-radius: 13px;}
+                QLabel {border-radius: 0px;}
+                QLabel#mainTime {
+                               font-size: 24px;}
+                QLabel#title{
+                                font-family: Helvetica;
+                                font-size: 36px;
+                                padding-left: 15px;
+                            }
+                QLabel#region{
+                                font-family: Helvetica;
+                                font-size: 22px;
+                                padding-right: 15px;
+                                padding-top: 15px;
+                                padding-bottom: 5px;
+                            }
+                QLabel#leftTime{
+                                font-family: Helvetica;
+                               }
+                QLabel#mainPrayerTime{
+                               font-size: 18px;
+                               background-color:#d9d9d9;
+                               padding-right: 15px;
+                               }
+                QLabel#region2{
+                               font-family: Helvetica;
+                               font-size: 14px;
+                               padding-right: 15px;
+                            }
+                QPushButton {
+                                font-size: 16px;
+                                font-family: Helvetica;
+                                font-weight: normal;
+                                margin-right: 6px;
+                                margin-bottom: 6px;
+                                padding: 5px;
+
+                }
+                QLabel#mainDate{
+                                font-size: 16px;
+                                font-family: Helvetica;
+                                font-weight: normal;
+                                padding-bottom: 4px;
+                }
+                QLabel#otherDate{
+                                font-size: 14px;
+                }
+                """)
 
 
     def __initUI(self):
@@ -149,60 +204,79 @@ class MyWidget(QtWidgets.QWidget):
         self.midLayout = QtWidgets.QVBoxLayout()
         #fajr time
         self.fajr = QtWidgets.QHBoxLayout()
-        self.fajrSvg = QtSvgWidgets.QSvgWidget(resource_path("./resources/real/fajr.svg"))
+        self.fajr_path_dark = resource_path("resources/real/fajr.svg")
+        self.fajr_path_light = resource_path("resources/real/fajr_light.svg")
+        self.fajrSvg = QtSvgWidgets.QSvgWidget(self.fajr_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.fajr_path_light)
         self.fajrSvg.setFixedSize(300, 80) #forces fixed for other mainTimes as well
         self.fajr.addWidget(self.fajrSvg, alignment=QtCore.Qt.AlignLeft)
         #self.fajrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.fajrTime = QtWidgets.QLabel(self.data.prayerToday.fajr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.fajrTime = QtWidgets.QLabel(self.data.prayerToday.fajr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
         #print(self.data.prayerToday)
         self.fajrTime.setObjectName("mainPrayerTime")
+        self.fajrTime.setFixedWidth(100)
         self.fajr.addWidget(self.fajrTime)
         #sunrise time
         self.sunrise = QtWidgets.QHBoxLayout()
-        self.sunriseSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/sunrise.svg"))
+        self.sunrise_path_dark = resource_path("resources/real/sunrise.svg")
+        self.sunrise_path_light = resource_path("resources/real/sunrise_light.svg")
+        self.sunriseSvg = QtSvgWidgets.QSvgWidget(self.sunrise_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.sunrise_path_light)
+        #self.sunriseSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/sunrise.svg"))
         self.sunriseSvg.setFixedSize(300, 80)
         self.sunrise.addWidget(self.sunriseSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.sunriseTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.sunriseTime = QtWidgets.QLabel(self.data.prayerToday.sunrise_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.sunriseTime = QtWidgets.QLabel(self.data.prayerToday.sunrise_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
         self.sunriseTime.setObjectName("mainPrayerTime")
+        self.sunriseTime.setFixedWidth(100)
         self.sunrise.addWidget(self.sunriseTime, 25)
         #self.sunrise.addWidget(self.sunriseTime)
         #dhuhr time
         self.dhuhr = QtWidgets.QHBoxLayout()
-        self.dhuhrSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/dhuhr.svg"))
+        self.dhuhr_path_dark = resource_path("resources/real/dhuhr.svg")
+        self.dhuhr_path_light = resource_path("resources/real/dhuhr_light.svg")
+        self.dhuhrSvg = QtSvgWidgets.QSvgWidget(self.dhuhr_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.dhuhr_path_light)
+        #self.dhuhrSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/dhuhr.svg"))
         self.dhuhrSvg.setFixedSize(300, 80)
         self.dhuhr.addWidget(self.dhuhrSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.dhuhrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.dhuhrTime = QtWidgets.QLabel(self.data.prayerToday.dhuhr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.dhuhrTime = QtWidgets.QLabel(self.data.prayerToday.dhuhr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
         self.dhuhrTime.setObjectName("mainPrayerTime")
         self.dhuhr.addWidget(self.dhuhrTime, 25)
         #self.dhuhr.addWidget(self.dhuhrTime)
         #asr time
         self.asr = QtWidgets.QHBoxLayout()
-        self.asrSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/asr.svg"))
+        self.asr_path_dark = resource_path("resources/real/asr.svg")
+        self.asr_path_light = resource_path("resources/real/asr_light.svg")
+        self.asrSvg = QtSvgWidgets.QSvgWidget(self.asr_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.asr_path_light)
+        #self.asrSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/asr.svg"))
         self.asrSvg.setFixedSize(300, 80)
         self.asr.addWidget(self.asrSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.asrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.asrTime = QtWidgets.QLabel(self.data.prayerToday.asr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.asrTime = QtWidgets.QLabel(self.data.prayerToday.asr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
         self.asrTime.setObjectName("mainPrayerTime")
         self.asr.addWidget(self.asrTime, 25)
         #maghrib time
         self.maghrib = QtWidgets.QHBoxLayout()
-        self.maghribSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/maghrib.svg"))
+        self.maghrib_path_dark = resource_path("resources/real/maghrib.svg")
+        self.maghrib_path_light = resource_path("resources/real/maghrib_light.svg")
+        self.maghribSvg = QtSvgWidgets.QSvgWidget(self.maghrib_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.maghrib_path_light)
+        #self.maghribSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/maghrib.svg"))
         self.maghribSvg.setFixedSize(300, 80)
         self.maghrib.addWidget(self.maghribSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.maghribTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.maghribTime = QtWidgets.QLabel(self.data.prayerToday.maghrib_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.maghribTime = QtWidgets.QLabel(self.data.prayerToday.maghrib_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
         self.maghribTime.setObjectName("mainPrayerTime")
         #self.maghrib.addWidget(self.maghribTime, 25)
-        self.maghrib.addWidget(self.maghribTime)
+        self.maghrib.addWidget(self.maghribTime, 25)
         #isha time
         self.isha = QtWidgets.QHBoxLayout()
-        self.ishaSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/isha.svg"))
+        self.isha_path_dark = resource_path("resources/real/isha.svg")
+        self.isha_path_light = resource_path("resources/real/isha_light.svg")
+        self.ishaSvg = QtSvgWidgets.QSvgWidget(self.isha_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.isha_path_light)
+        #self.ishaSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/isha.svg"))
         self.ishaSvg.setFixedSize(300, 80)
         self.isha.addWidget(self.ishaSvg, 75, alignment=QtCore.Qt.AlignLeft)
         #self.ishaTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.ishaTime = QtWidgets.QLabel(self.data.prayerToday.isha_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        self.ishaTime = QtWidgets.QLabel(self.data.prayerToday.isha_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
         self.ishaTime.setObjectName("mainPrayerTime")
         self.isha.addWidget(self.ishaTime, 25)
         #self.isha.addWidget(self.ishaTime)
@@ -313,12 +387,20 @@ class MyWidget(QtWidgets.QWidget):
         self.maghribTime.setText(self.data.getPrayerToday().getPrayertimes()["maghrib"].strftime(self.timeFtime))
         self.ishaTime.setText(self.data.getPrayerToday().getPrayertimes()["isha"].strftime(self.timeFtime))
 
+        self.fajrSvg.load(self.fajr_path_dark) if self.is_dark_theme() else self.fajrSvg.load(self.fajr_path_light)
+        self.sunriseSvg.load(self.sunrise_path_dark) if self.is_dark_theme() else self.sunriseSvg.load(self.sunrise_path_light)
+        self.dhuhrSvg.load(self.dhuhr_path_dark) if self.is_dark_theme() else self.dhuhrSvg.load(self.dhuhr_path_light)
+        self.asrSvg.load(self.asr_path_dark) if self.is_dark_theme() else self.asrSvg.load(self.asr_path_light)
+        self.maghribSvg.load(self.maghrib_path_dark) if self.is_dark_theme() else self.maghribSvg.load(self.maghrib_path_light)
+        self.ishaSvg.load(self.isha_path_dark) if self.is_dark_theme() else self.ishaSvg.load(self.isha_path_light)
+        
+
 
     def recalculateData(self):
         self.data.genPrayerTimes()
 
-
     def dialog_finished(self):
+        self.data.setDarkMode(self.dialog.darkModeSwitch.isChecked())
         self.data.setCalcMethod(self.dialog.calc_dropdown.currentData())
         #print(data.getCalcMethod())
         self.data.setAsrMethod(self.dialog.asrMethodDropdown.currentData())
@@ -358,6 +440,11 @@ class MyWidget(QtWidgets.QWidget):
                 print("no tz checked")
             case 0:
                 print("tz by loc checked")
+                if self.data.getTzMethod() != 0:
+                    offset, name = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
+                    self.data.setUTCOffset(offset)
+                    self.data.setTzMethod(0)
+                    self.data.setTzDesc(name)
             case 1:
                 print("manual tz chosen")
                 #self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
@@ -374,6 +461,8 @@ class MyWidget(QtWidgets.QWidget):
         print()
         self.recalculateData()
         self.updateTimes()
+        #self.__initUI()
+        self.init_style()
     
     def cleanup_thread(self):
         self.threadz.quit()
@@ -398,17 +487,17 @@ class MyWidget(QtWidgets.QWidget):
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, data=pray_data.Data(datetime.now(), pray_data.AppConfig())):
         super().__init__(parent)
-        self.setStyleSheet('''
-    QLineEdit:disabled {
-        color: gray;
-        background-color: #262626;
-        border: 1px solid #a0a0a0;
-    }
-    QLineEdit::enabled {
-        color: black;
-        background-color: #ffffff;
-        border: 1px solid #a0a0a0}
-        ''')
+    #    self.setStyleSheet('''
+    #QLineEdit:disabled {
+    #    color: gray;
+    #    background-color: #262626;
+    #    border: 1px solid #a0a0a0;
+    #}
+    #QLineEdit::enabled {
+    #    color: black;
+    #    background-color: #ffffff;
+    #    border: 1px solid #a0a0a0}
+    #    ''')
         #self.setFixedSize(640,480)
         self.setFixedWidth(480)
         self.setWindowTitle("Settings")
@@ -417,6 +506,14 @@ class SettingsDialog(QtWidgets.QDialog):
         self.layout = QtWidgets.QVBoxLayout()
 
         #self.layout.addWidget(QtWidgets.QLabel("Settings"), 5, alignment=QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+        
+        # dark mode
+        self.darkModeGroup = QtWidgets.QGroupBox("App Theme")
+        self.darkModeVBox = QtWidgets.QVBoxLayout()
+        self.darkModeSwitch = QtWidgets.QCheckBox("Dark Mode")
+        self.darkModeVBox.addWidget(self.darkModeSwitch)
+        self.darkModeGroup.setLayout(self.darkModeVBox)
+        self.darkModeSwitch.setChecked(self.data.getDarkMode())
 
         # date/time
         self.dateTimeGroup = QtWidgets.QGroupBox("Date")
@@ -561,6 +658,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
         #self.layout.addWidget(QtWidgets.QSpacerItem(20,40))
+        self.layout.addWidget(self.darkModeGroup)
         self.layout.addWidget(self.dateTimeGroup)
         self.layout.addWidget(self.asrMethodGroup)
         self.layout.addWidget(self.locationGroup)
@@ -716,9 +814,11 @@ def is_connected(hostname, isConnected: list):
 
 if __name__ == "__main__":
     appConfig = pray_data.AppConfig()
+
     midnight_today = datetime.combine(datetime.today(), time.min)
     # holds data for app during runtime (app does not store information otherwise)
     data = pray_data.Data(midnight_today, appConfig)
+
     #print("midnight: ",data.getTodayDate())
 
     hostname = "one.one.one.one" # check for 1.1.1.1 to dns lookup
@@ -740,6 +840,9 @@ if __name__ == "__main__":
 
 
     app = QtWidgets.QApplication([])
+    #qdarktheme.setup_theme("dark", corner_shape="sharp")
+    qdarktheme.setup_theme("dark")
+    data.setDarkMode(True)
     app.setWindowIcon(QtGui.QIcon(resource_path("resources/maruf_icon.png")))
 
     widget = MyWidget(isConnected.value, data)

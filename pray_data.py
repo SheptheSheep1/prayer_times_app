@@ -84,7 +84,7 @@ class Data():
         self.yesterdayDate = yesterday
         self.tomorrowDate = tomorrow
 
-
+        self.darkMode = True
 
 
         #self.asrMethod = 1
@@ -178,6 +178,9 @@ class Data():
     def setTzDesc(self, desc: str):
         self.tzDesc = desc
 
+    def setDarkMode(self, mode: bool):
+        self.darkMode = mode
+
     def getPrayerYesterday(self) -> PrayerTime:
         return self.prayerYesterday
     
@@ -220,3 +223,6 @@ class Data():
 
     def getTzDesc(self) -> str:
         return self.tzDesc
+    
+    def getDarkMode(self) -> bool:
+        return self.darkMode
