@@ -46,7 +46,10 @@ jobs:
           
       - name: Get site-packages path
         id: site
-        run: echo "SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')" >> $GITHUB_ENV
+        shell: bash
+        run: |
+          echo "SITE=$(python -c 'import site; print(site.getsitepackages()[0].replace("\\\\", "/"))')
+          echo "SITE_PACKAGES=$SITE" >> $GITHUB_ENV" >> $GITHUB_ENV
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
