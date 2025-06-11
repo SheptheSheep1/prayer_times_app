@@ -10,6 +10,8 @@ import multiprocessing
 import CalcMethods
 import os
 import qdarktheme
+import traceback
+import time as atime
 from zoneinfo import ZoneInfo, available_timezones
 from timezonefinder import TimezoneFinder
 
@@ -28,21 +30,24 @@ def resource_path(relative_path):
 #prayerTime = app.PrayerTime()
 #print(prayerTime)
 class MyWidget(QtWidgets.QWidget):
-    def __init__(self, isNetwork: bool, data: pray_data.Data):
+    def __init__(self, isNetwork: bool, data: pray_data.Data, conf_file_existence: bool):
         super().__init__()
         self.data = data
         self.strftime = ""
         self.location = zapp.Location()
         print("dark mode:",self.data.getDarkMode())
-        if isNetwork:
+        if isNetwork and not conf_file_existence:
             print("net")
             self.data.setLocationMethod(0)
             self.location.setLocationByIP()
+            self.data.setLocation(self.location)
+        elif conf_file_existence:
+            self.data.setLocationMethod(2)
         else:
             print("no net")
             self.data.setLocationMethod(2)
             self.location.setLocationManually(33.5, -112.1)
-        self.data.setLocation(self.location)
+            self.data.setLocation(self.location)
         self.data.genPrayerTimes()
         print(f"location: {self.data.getLocation()}")
         print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
@@ -407,6 +412,7 @@ class MyWidget(QtWidgets.QWidget):
         #print(f"asr: {self.data.getAsrMethod()}")
         self.threadz = QtCore.QThread()
         self.worker = None
+        self.loc_thread_done = False
         match(self.dialog.locationBGroup.checkedId()):
             case -1:
                 print("no loc checked")
@@ -428,23 +434,32 @@ class MyWidget(QtWidgets.QWidget):
 
             self.worker.moveToThread(self.threadz)
             self.threadz.started.connect(self.worker.run)
+            self.worker.error.connect(self.error_thread)
             self.worker.finished.connect(self.handle_result)
             self.worker.finished.connect(self.cleanup_thread)
             #self.threadz.finished.connect(self.threadz.deleteLater)
 
+            self.timeout_timer = QtCore.QTimer(self)
+            self.timeout_timer.setSingleShot(True)
+            self.timeout_timer.timeout.connect(self.timeout_thread)
+            self.timeout_timer.start(8000) # allow 8 seconds to finish
+            print("started timer")
+
             self.threadz.start()
+            #self.threadz.join(5)
         print(f"Coords: {self.data.getLocation()}, {self.data.getLocation().getDescription()}")
         print("location finished")
         match self.dialog.utcOffsetBGroup.checkedId():
             case -1:
                 print("no tz checked")
+                if self.data.getTzMethod() != -1:
+                    self.tz_method_changed = True
+
             case 0:
                 print("tz by loc checked")
                 if self.data.getTzMethod() != 0:
-                    offset, name = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
-                    self.data.setUTCOffset(offset)
-                    self.data.setTzMethod(0)
-                    self.data.setTzDesc(name)
+                    self.tz_method_changed = True
+                    
             case 1:
                 print("manual tz chosen")
                 #self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
@@ -452,29 +467,54 @@ class MyWidget(QtWidgets.QWidget):
                 self.data.setTzDesc(self.dialog.utcOffsetInput.currentText())
                 #print(self.dialog.utcOffsetInput.currentData().total_seconds()/3600)
                 print(self.data.getUTCOffset(), self.data.getTzDesc())
-        self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
+        print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
+        #self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
         #self.data.setPrayerYesterday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         #self.data.setPrayerTomorrow(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         #self.data.setPrayerToday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         self.data.setDate(self.dialog.get_selected_datetime())
         print(f"date: {self.data.getTodayDate()}")
-        print()
-        self.recalculateData()
-        self.updateTimes()
+        #self.recalculateData()
+        #self.updateTimes()
         #self.__initUI()
         self.init_style()
     
     def cleanup_thread(self):
+        print("cleaning up threads...")
         self.threadz.quit()
         self.threadz.wait()
         self.worker.deleteLater()
         self.threadz.deleteLater()
 
+    def error_thread(self, message):
+        print("thread error...keeping location from before save...")
+        self.loading_dialog.hide()
+        self.timeout_timer.stop()
+        self.threadz.quit()
+        self.threadz.wait()
+
+    def timeout_thread(self):
+        if self.loc_thread_done:
+            print("loc timed out!")
+            self.threadz.quit()
+            self.threadz.wait()
+
     def handle_result(self, result):
+        print("handling result...")
         self.loading_dialog.hide()
         print(f"got: {result}")
         self.data.setLocation(result)
+        print("set", self.data.getLocation().getLatitude(), self.data.getLocation().getLongitude())
         self.regionLoc.setText(self.data.getLocation().getDescription())
+        self.data.setLocationMethod(1)
+        if self.data.getTzMethod() == 0:
+            offset, name = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
+            self.data.setUTCOffset(offset)
+            self.data.setTzMethod(0)
+            self.data.setTzDesc(name)
+        print(f"set: {self.data.getTzDesc()}")
+        self.recalculateData()
+        self.updateTimes()
         self.threadz.quit()
         self.threadz.wait()
         self.worker.deleteLater()
@@ -780,6 +820,7 @@ class LoadingDialog(QtWidgets.QDialog):
 
 class WebRequestWorker(QtCore.QObject):
     finished = QtCore.Signal(object)
+    error = QtCore.Signal(str)
 
     def __init__(self, mode: str, query=""):
         super().__init__()
@@ -787,14 +828,19 @@ class WebRequestWorker(QtCore.QObject):
         self.query = query
         self.location = zapp.Location()
 
+    @QtCore.Slot()
     def run(self):
-        if self.mode == "byIP":
-            self.location.setLocationByIP()
-        elif self.mode == "byQuery":
-            self.location.setLocationByQuery(self.query)
-        else:
-            self.location = zapp.Location()
-        self.finished.emit(self.location)
+        try:
+            if self.mode == "byIP":
+                self.location.setLocationByIP()
+            elif self.mode == "byQuery":
+                self.location.setLocationByQuery(self.query)
+            else:
+                self.location = zapp.Location()
+            self.finished.emit(self.location)
+        except Exception:
+            err_msg = traceback.format_exc()
+            self.error.emit(err_msg)
 
 
 
@@ -813,6 +859,20 @@ def is_connected(hostname, isConnected: list):
     #return
 
 if __name__ == "__main__":
+    app = QtWidgets.QApplication([])
+
+    # 1. Show splash screen
+    #splash_pix = QtGui.QPixmap(400, 300)
+    #splash_pix.fill(QtCore.Qt.black)  # You can use an image instead
+    #splash = QtWidgets.QSplashScreen(splash_pix)
+    #splash.showMessage("Loading app...", QtCore.Qt.AlignBottom | QtCore.Qt.AlignCenter, QtCore.Qt.white)
+    #splash.show()
+
+    #settingsDialog = LoadingDialog()
+    #settingsDialog.show()
+    #app.processEvents()
+    #atime.sleep(4)
+    conf_file_exists = os.path.exists("config.toml")
     appConfig = pray_data.AppConfig()
 
     midnight_today = datetime.combine(datetime.today(), time.min)
@@ -839,16 +899,19 @@ if __name__ == "__main__":
     #print("[+] internet connectivity check finished")
 
 
-    app = QtWidgets.QApplication([])
     #qdarktheme.setup_theme("dark", corner_shape="sharp")
     qdarktheme.setup_theme("dark")
     data.setDarkMode(True)
     app.setWindowIcon(QtGui.QIcon(resource_path("resources/maruf_icon.png")))
+    
+    widget = MyWidget(isConnected.value, data, conf_file_exists)
+    #widget = MyWidget(True, data)
 
-    widget = MyWidget(isConnected.value, data)
     widget.setWindowIcon(QtGui.QIcon(resource_path("resources/maruf_icon.png")))
     widget.setFixedSize(800, 600)
-    widget.show()
+    #settingsDialog.accept()
+    widget.show()    # 4. Close splash
+    #splash.finish(main_win)
 
     app.exec()
     data.exportConfigToFile()

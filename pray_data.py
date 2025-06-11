@@ -3,18 +3,22 @@ from app import PrayerTime, CalcMethod, Location, getLocalUTCOffset
 from datetime import datetime, timedelta, timezone, UTC
 import time
 import toml
-from timezonefinder import TimezoneFinder
+from timezonefinder import TimezoneFinderL
 from zoneinfo import ZoneInfo
 #from dateutil.relativedelta import relativedelta
+import timeit
 
 #lat, lng to utc_offset
 def get_offset_name(*, lat, lng):
+    start = timeit.timeit()
 
     """
     Returns a location's time zone offset from UTC in minutes using zoneinfo.
     """
-    tf = TimezoneFinder()
-    tz_name = tf.certain_timezone_at(lat=lat, lng=lng)
+    #print("clang: ", TimezoneFinder.using_clang_pip())  # returns True or False
+    tf = TimezoneFinderL(in_memory=True)
+    #tz_name = tf.certain_timezone_at(lat=lat, lng=lng)
+    tz_name = tf.timezone_at(lat=lat, lng=lng)
 
     now = datetime.now(UTC).now()
 
@@ -32,6 +36,8 @@ def get_offset_name(*, lat, lng):
         display = f"(UTC{'+' if hours >= 0 else ''}{hours:0.1f}) {tz_name}"   #now_utc = datetime.now(tz=ZoneInfo("UTC"))
     #now_local = now_utc.astimezone(ZoneInfo(tz_name))
     #offset_seconds = (now_local.utcoffset().total_seconds())
+    end = timeit.timeit()
+    print(end-start)
     return hours, display
 
 
@@ -61,6 +67,13 @@ class AppConfig:
             "prayer_times":{"method_name": "From File: ISNA", "fajr_angle": 15, "isha_angle": -15, "maghrib_to_isha_90": False, "asr_method": 2},
             "location":{"latitude": 34.1434, "longitude": -111.123, "region_description": "Phoenix, AZ"}
         }
+
+    def conf_exists(self) -> bool:
+        try:
+            toml.load(self.path)
+            return True
+        except FileNotFoundError:
+            return False
 
     def setData(self, data:dict):
         self.data=data
@@ -125,10 +138,12 @@ class Data():
         self.config.data["prayer_times"]["asr_method"] = self.getAsrMethod()
 
         self.config.data["location"]["latitude"] = self.getLocation().getLatitude()
+        print("latitude", self.getLocation().getLatitude())
         self.config.data["location"]["longitude"] = self.getLocation().getLongitude()
         self.config.data["location"]["region_description"] = self.getLocation().getDescription()
 
         self.config.save()
+        print("saving config to file...")
 
 
     def setPrayerYesterday(self, prayerTime: PrayerTime):
