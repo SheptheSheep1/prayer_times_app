@@ -68,7 +68,7 @@ jobs:
           mode: onefile
           enable-plugins: pyside6
           include-data-dir: |
-            ${{ env.NUMPY_DIR }} =numpy
+            ${{ env.NUMPY_DIR }}=numpy
             resources=resources
           include-raw-dir: |
             ${{ env.TIMEZONEFINDER_DIR }}=timezonefinder
