@@ -55,7 +55,6 @@ jobs:
           script-name: maruf.py
           mode: onefile
           enable-plugins: pyside6
-          include-data-files: "${{ env.SITE_PACKAGES }}/timezonefinder/*.bin=timezonefinder/"
           include-data-dir: |
             ${{ env.SITE_PACKAGES }}/numpy=numpy
           include-raw-dir: "${{ env.SITE_PACAKGES }}/timezonefinder=timezonefinder"
