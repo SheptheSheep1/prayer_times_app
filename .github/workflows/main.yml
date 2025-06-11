@@ -48,15 +48,16 @@ jobs:
         id: site
         shell: python
         run: |
-          import site, os
-          path = site.getsitepackages()[0].replace("\\", "/")
-          print("Resolved site-packages:", path)
+          import os
+          import numpy, timezonefinder
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
-            f.write("SITE_PACKAGES={}\n".format(path))
+            f.write(f"NUMPY_DIR={os.path.dirname(numpy.__file__).replace('\\\\', '/')}\n")
+            f.write(f"TIMEZONEFINDER_DIR={os.path.dirname(timezonefinder.__file__).replace('\\\\', '/')}\n")
+      - name: Debug paths
+        run: |
+          echo "NUMPY_DIR: ${{ env.NUMPY_DIR }}"
+          echo "TIMEZONEFINDER_DIR: ${{ env.TIMEZONEFINDER_DIR }}"
 
-      - name: Confirm SITE_PACKAGES pathA
-        shell: bash
-        run: echo "SITE_PACKAGES = ${{ env.SITE_PACKAGES }}"
 
 
       - name: Build Executable
@@ -67,10 +68,10 @@ jobs:
           mode: onefile
           enable-plugins: pyside6
           include-data-dir: |
-            ${{ env.SITE_PACKAGES }}/numpy=numpy
+            ${{ env.NUMPY_DIR }} =numpy
             resources=resources
           include-raw-dir: |
-            ${{ env.SITE_PACKAGES }}/timezonefinder=timezonefinder
+            ${{ env.TIMEZONEFINDER_DIR }}=timezonefinder
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
