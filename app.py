@@ -6,6 +6,8 @@ import time
 import argparse
 import json
 import re
+import ssl
+import certifi
 from geopy.geocoders import Nominatim
 
 # global variable
@@ -75,32 +77,36 @@ def userInteraction() -> Dict:
         utc_offset = float(input("Enter your timezone's offset from UTC (format: '11.5'): ").strip())
 
     # location
+    location = Location()
     if getYesNo("\nMa'ruf requires GPS latitude and longitude coordinates in order to calculate prayer times\nWould you like to use an approximation of your GPS coordinates based on your public IPv4 address? (requires an active internet connection)"):
-
-        latitude, longitude, description = getLocationByIP()
+        location .setLocationByIP()
+        #latitude, longitude, description = getLocationByIP()
     elif getYesNo("\nWould you like to use an approximation based on a given city? (requires an active internet connection, uses Nominatim API)"):
         user_query = ""
         query_string = ""
         while True:
             try:
                 user_query = str(input(("Enter your city/country (format: New York, USA), limit to 40 alphanumeric characters (Aa-Zz, 0-9): ")))
-                query_string = Location.processQuery(user_query)
+                #query_string = Location.processQuery(user_query)
+                query_string = processQuery(user_query)
             except ValueError as e:
                 dPrint(e)
                 continue
             break
-        latitude, longitude, description = getLocationByQuery(query_string)
+        #latitude, longitude, description = getLocationByQuery(query_string)
+        location.setLocationByQuery(query_string)
     else:
         try:
             latitude = float(input("Enter your latitude coordinate (format: 12.34): ").strip())
             latitude = "{:.2f}".format(latitude)
             longitude = float(input("Enter your longitude coordinate (format: 12.34): ").strip())
             longitude = "{:.2f}".format(longitude)
+            location.setLocationManually(latitude, longitude)
             description = "Custom"
         except ValueError:
             dPrint("Please enter a number in the given format")
-    
-    dPrint(f"({latitude}, {longitude}) {description} set")
+    #dPrint(f"({latitude}, {longitude}) {description} set")
+    dPrint(f"({location.getLatitude()}, {location.getLongitude()}, {location.getDescription()})")
     # calc method
     CalcMethod = promptCalcMethod()
     if getYesNo("Would you like to use the Hanafi asr calculation method (2x Shadow Length)?"):
@@ -114,7 +120,7 @@ def userInteraction() -> Dict:
         dPrint(f"Asr juristic method set to: {method}\n")
         dPrint("Calculating prayer times...\n")
 
-    return dict(latitude=latitude, longitude=longitude, description=description, calc_method=CalcMethod, asr_method=ASR_METHOD, month=month, day=day, year=year, utc_offset=utc_offset)
+    return dict(latitude=location.getLatitude(), longitude=location.getLongitude(), description=location.getDescription(), calc_method=CalcMethod, asr_method=ASR_METHOD, month=month, day=day, year=year, utc_offset=utc_offset)
 
 
 def getYesNo(question: str) -> bool:
@@ -129,7 +135,7 @@ def getYesNo(question: str) -> bool:
 
     
 def promptCalcMethod():
-    dPrint(f'''
+    print(f'''
               (1) MWL (Muslim World League) Fajr: 18\N{DEGREE SIGN} Isha: 17\N{DEGREE SIGN}
               (2) ISNA (Islamic Society of North America) Fajr: 15\N{DEGREE SIGN} Isha: 15\N{DEGREE SIGN}
               (3) Umm al-Qura (Umm al-Qura University, Makkah) Fajr: 18.5\N{DEGREE SIGN} Isha: 90 mins after Maghrib, 120 mins during Ramadan
@@ -197,10 +203,11 @@ def getLocalUTCOffset(time) -> float:
     return ((datetime.fromtimestamp(time).timestamp()) - datetime.fromtimestamp(time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
 
 class Location:
-    def __init__(self, latitude=0.0, longitude=0.0, description=""):
+    def __init__(self, latitude=0.0, longitude=0.0, description="Custom"):
         self.latitude = latitude
         self.longitude = longitude
         self.description = description
+        self.__ssl_context = ssl.create_default_context(cafile=certifi.where())
 
     def __str__(self):
         return(f"({self.latitude}, {self.longitude})")
@@ -229,7 +236,7 @@ class Location:
         print(self.description)
     
     def setLocationByQuery(self, query: str):
-        geolocator = Nominatim(user_agent='maruf')
+        geolocator = Nominatim(user_agent='maruf', ssl_context=self.__ssl_context)
         # TODO: Actual exception handling
         location = geolocator.geocode(query)
         if location is None:
