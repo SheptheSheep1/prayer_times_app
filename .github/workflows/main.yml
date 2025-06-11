@@ -50,8 +50,14 @@ jobs:
         run: |
           import site, os
           path = site.getsitepackages()[0].replace("\\", "/")
-          with open(os.environ["GITHUB_ENV"], "a") as f:
-            f.write(f"SITE_PACKAGES={path}\n")
+          print("Resolved site-packages:", path)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
+            f.write("SITE_PACKAGES={}\n".format(path))
+
+      - name: Confirm SITE_PACKAGES pathA
+        shell: bash
+        run: echo "SITE_PACKAGES = ${{ env.SITE_PACKAGES }}"
+
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
