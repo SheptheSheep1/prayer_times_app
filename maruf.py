@@ -15,16 +15,25 @@ import time as atime
 from zoneinfo import ZoneInfo, available_timezones
 from timezonefinder import TimezoneFinder
 
+#def resource_path(relative_path):
+#    if hasattr(sys, '_MEIPASS'):
+#        base_path = sys._MEIPASS  # For PyInstaller-like environments
+#    elif '__compiled__' in globals():
+#        print("compiled")
+#        base_path = os.path.dirname(sys.executable)
+#    else:
+#        #return os.path.join(os.path.abspath("."), relative_path)
+#        #return relative_path
+#        base_path = os.path.abspath(".")
+#    return os.path.join(base_path, relative_path)
 def resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        base_path = sys._MEIPASS  # For PyInstaller-like environments
-    elif '__compiled__' in globals():
+    # Detect compiled (Nuitka) mode
+    if getattr(sys, 'frozen', False) or '__compiled__' in globals():
         base_path = os.path.dirname(sys.executable)
     else:
-        #return os.path.join(os.path.abspath("."), relative_path)
-        #return relative_path
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    return os.path.normpath(os.path.join(base_path, relative_path))
 
 
 #prayerTime = app.PrayerTime()
@@ -474,8 +483,8 @@ class MyWidget(QtWidgets.QWidget):
         #self.data.setPrayerToday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         self.data.setDate(self.dialog.get_selected_datetime())
         print(f"date: {self.data.getTodayDate()}")
-        #self.recalculateData()
-        #self.updateTimes()
+        self.recalculateData()
+        self.updateTimes()
         #self.__initUI()
         self.init_style()
     
