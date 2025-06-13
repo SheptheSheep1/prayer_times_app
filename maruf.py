@@ -1,19 +1,23 @@
 import sys
-import socket
 import pray_data
-from PySide6 import QtCore, QtWidgets, QtGui, QtSvgWidgets
+from PySide6.QtCore import QThread, Qt, QTimer, QDate, QSize, QObject, Signal, Slot
+from PySide6.QtGui import QIcon, QMovie
+from PySide6.QtSvgWidgets import QSvgWidget
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, QComboBox, QGroupBox, QCheckBox, QDialogButtonBox, QRadioButton, QDialogButtonBox, QApplication, QButtonGroup
+#from PySide6 import    QtSvgWidgets
 import app as zapp
-import random
-import string
+#import random
+#import string
 from datetime import datetime, time, UTC
-import multiprocessing
+from multiprocessing import freeze_support, Process, Value
 import CalcMethods
 import os
 import qdarktheme
-import traceback
-import time as atime
+#import traceback
+#import time as atime
+#import timeit
 from zoneinfo import ZoneInfo, available_timezones
-from timezonefinder import TimezoneFinder
+#from timezonefinder import TimezoneFinder
 
 #def resource_path(relative_path):
 #    if hasattr(sys, '_MEIPASS'):
@@ -38,41 +42,43 @@ def resource_path(relative_path):
 
 #prayerTime = app.PrayerTime()
 #print(prayerTime)
-class MyWidget(QtWidgets.QWidget):
+class MyWidget(QWidget):
     def __init__(self, isNetwork: bool, data: pray_data.Data, conf_file_existence: bool):
         super().__init__()
         self.data = data
         self.strftime = ""
-        self.location = zapp.Location()
         print("dark mode:",self.data.getDarkMode())
         if isNetwork and not conf_file_existence:
             print("net")
             self.data.setLocationMethod(0)
-            self.location.setLocationByIP()
-            self.data.setLocation(self.location)
+            self.data.getLocation().setLocationByIP()
+            #self.location.setLocationByIP()
+            #self.data.setLocation(self.location)
         elif conf_file_existence:
             self.data.setLocationMethod(2)
         else:
             print("no net")
             self.data.setLocationMethod(2)
-            self.location.setLocationManually(33.5, -112.1)
-            self.data.setLocation(self.location)
+            self.data.getLocation().setLocationManually(33.5, -112.1)
+            #self.location.setLocationManually(33.5, -112.1)
+            #self.data.setLocation(self.location)
         self.data.genPrayerTimes()
         print(f"location: {self.data.getLocation()}")
         print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
         self.setWindowTitle("Ma'ruf")
         self.__initUI()
         self.init_style()
+        #self.set_style_color()
 
     def is_dark_theme(self):
         return self.data.getDarkMode()
 
     def init_style(self):
+
         if self.data.getDarkMode() is True:
             qdarktheme.setup_theme("dark")
-            self.setStyleSheet( """
+            self.setStyleSheet("""
                 QPushButton#another_button {background-color:green; color:black; border-radius: 13px;}
-                QLabel {border-radius: 0px}
                 QLabel#mainTime {
                                font-size: 24px;}
                 QLabel#title{
@@ -92,14 +98,19 @@ class MyWidget(QtWidgets.QWidget):
                                }
                 QLabel#mainPrayerTime{
                                font-size: 18px;
-                               background-color:#262626;
                                padding-right: 15px;
+                               border-radius: 0px;
+                               background-color: #262626;
                                }
                 QLabel#region2{
                                font-family: Helvetica;
                                font-size: 14px;
                                padding-right: 15px;
                             }
+                QLabel#bottomInfo{
+                                font-size: 10px;
+                                padding-left: 15px;
+                }
                 QPushButton {
                                 font-size: 16px;
                                 font-family: Helvetica;
@@ -123,7 +134,7 @@ class MyWidget(QtWidgets.QWidget):
             qdarktheme.setup_theme("light")
             self.setStyleSheet("""
                 QPushButton#another_button {background-color:green; color:black; border-radius: 13px;}
-                QLabel {border-radius: 0px;}
+                QLabel {border-radius: 0px}
                 QLabel#mainTime {
                                font-size: 24px;}
                 QLabel#title{
@@ -143,14 +154,19 @@ class MyWidget(QtWidgets.QWidget):
                                }
                 QLabel#mainPrayerTime{
                                font-size: 18px;
-                               background-color:#d9d9d9;
                                padding-right: 15px;
+                               border-radius: 0px;
+                               background-color: #d9d9d9;
                                }
                 QLabel#region2{
                                font-family: Helvetica;
                                font-size: 14px;
                                padding-right: 15px;
                             }
+                QLabel#bottomInfo{
+                                font-size: 10px;
+                                padding-left: 15px;
+                }
                 QPushButton {
                                 font-size: 16px;
                                 font-family: Helvetica;
@@ -169,41 +185,41 @@ class MyWidget(QtWidgets.QWidget):
                 QLabel#otherDate{
                                 font-size: 14px;
                 }
-                """)
+            """)
 
 
     def __initUI(self):
         self.dateFtime = "%B %d, %Y"
         self.timeFtime = "%I:%M %p"
-        self.mainLayout = QtWidgets.QVBoxLayout(self)
+        self.mainLayout = QVBoxLayout(self)
 
         # title
-        self.rightTitleLayout = QtWidgets.QVBoxLayout()
-        self.regionLoc = QtWidgets.QLabel(f"{self.data.getLocation().getDescription()}", alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignTop, objectName="region")
+        self.rightTitleLayout = QVBoxLayout()
+        self.regionLoc = QLabel(f"{self.data.getLocation().getDescription()}", alignment=Qt.AlignRight | Qt.AlignTop, objectName="region")
         self.rightTitleLayout.addWidget(self.regionLoc)
-        #self.rightTitleLayout.addWidget(QtWidgets.QLabel("Scottsdale, Arizona", alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignTop, objectName="region"))
-        #self.date = QtWidgets.QLabel("May 30, 2025", alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignTop)
+        #self.rightTitleLayout.addWidget(QLabel("Scottsdale, Arizona", alignment=Qt.AlignRight | Qt.AlignTop, objectName="region"))
+        #self.date = QLabel("May 30, 2025", alignment=Qt.AlignRight | Qt.AlignTop)
         #self.date.setObjectName("region2")
         #print(self.date.font())
         #self.rightTitleLayout.addWidget(self.date)
         self.rightTitleLayout.setSpacing(0)
         self.rightTitleLayout.setContentsMargins(0,0,0,0)
 
-        self.titleLayout = QtWidgets.QHBoxLayout()
-        self.titleLayout.addWidget(QtWidgets.QLabel("Prayer Times", alignment=QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter, objectName="title"))
+        self.titleLayout = QHBoxLayout()
+        self.titleLayout.addWidget(QLabel("Prayer Times", alignment=Qt.AlignLeft | Qt.AlignVCenter, objectName="title"))
         self.titleLayout.setContentsMargins(0,0,0,0)
         self.titleLayout.setSpacing(0)
 
         self.titleLayout.addLayout(self.rightTitleLayout)
 
         #subtitle
-        self.subtitleLayout = QtWidgets.QHBoxLayout()
-        #self.leftDate = QtWidgets.QLabel("September 30, 2025", alignment=QtCore.Qt.AlignCenter)
+        self.subtitleLayout = QHBoxLayout()
+        #self.leftDate = QLabel("September 30, 2025", alignment=Qt.AlignCenter)
         #print("datetime:",self.data.getTodayDate())
-        self.leftDate = QtWidgets.QLabel(self.data.getYesterdayDate().strftime(self.dateFtime), alignment=QtCore.Qt.AlignCenter)
-        self.centerDate = QtWidgets.QLabel(self.data.getTodayDate().strftime(self.dateFtime), alignment=QtCore.Qt.AlignCenter)
+        self.leftDate = QLabel(self.data.getYesterdayDate().strftime(self.dateFtime), alignment=Qt.AlignCenter)
+        self.centerDate = QLabel(self.data.getTodayDate().strftime(self.dateFtime), alignment=Qt.AlignCenter)
         #print("center:",self.data.getTodayDate())
-        self.rightDate = QtWidgets.QLabel(self.data.getTomorrowDate().strftime(self.dateFtime), alignment=QtCore.Qt.AlignCenter)
+        self.rightDate = QLabel(self.data.getTomorrowDate().strftime(self.dateFtime), alignment=Qt.AlignCenter)
         self.centerDate.setObjectName("mainDate")
         self.leftDate.setObjectName("otherDate")
         self.rightDate.setObjectName("otherDate")
@@ -213,84 +229,84 @@ class MyWidget(QtWidgets.QWidget):
         self.subtitleLayout.setSpacing(0)
         self.subtitleLayout.setContentsMargins(0,0,0,0)
 
-        self.subLayout = QtWidgets.QHBoxLayout()
+        self.subLayout = QHBoxLayout()
 
-        self.midLayout = QtWidgets.QVBoxLayout()
+        self.midLayout = QVBoxLayout()
         #fajr time
-        self.fajr = QtWidgets.QHBoxLayout()
-        self.fajr_path_dark = resource_path("resources/real/fajr.svg")
-        self.fajr_path_light = resource_path("resources/real/fajr_light.svg")
-        self.fajrSvg = QtSvgWidgets.QSvgWidget(self.fajr_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.fajr_path_light)
+        self.fajr = QHBoxLayout()
+        self.fajr_path_dark = resource_path("resources/maruf_assets/fajr.svg")
+        self.fajr_path_light = resource_path("resources/maruf_assets/fajr_light.svg")
+        self.fajrSvg = QSvgWidget(self.fajr_path_dark) if self.is_dark_theme() else QSvgWidget(self.fajr_path_light)
         self.fajrSvg.setFixedSize(300, 80) #forces fixed for other mainTimes as well
-        self.fajr.addWidget(self.fajrSvg, alignment=QtCore.Qt.AlignLeft)
-        #self.fajrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.fajrTime = QtWidgets.QLabel(self.data.prayerToday.fajr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
+        self.fajr.addWidget(self.fajrSvg, alignment=Qt.AlignLeft)
+        #self.fajrTime = QLabel(datetime.min.strftime("%I:%M %p"), alignment=Qt.AlignRight | Qt.AlignVCenter)
+        self.fajrTime = QLabel(self.data.prayerToday.fajr_time.strftime("%I:%M %p"), alignment=Qt.AlignCenter)
         #print(self.data.prayerToday)
         self.fajrTime.setObjectName("mainPrayerTime")
         self.fajrTime.setFixedWidth(100)
         self.fajr.addWidget(self.fajrTime)
         #sunrise time
-        self.sunrise = QtWidgets.QHBoxLayout()
-        self.sunrise_path_dark = resource_path("resources/real/sunrise.svg")
-        self.sunrise_path_light = resource_path("resources/real/sunrise_light.svg")
-        self.sunriseSvg = QtSvgWidgets.QSvgWidget(self.sunrise_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.sunrise_path_light)
-        #self.sunriseSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/sunrise.svg"))
+        self.sunrise = QHBoxLayout()
+        self.sunrise_path_dark = resource_path("resources/maruf_assets/sunrise.svg")
+        self.sunrise_path_light = resource_path("resources/maruf_assets/sunrise_light.svg")
+        self.sunriseSvg = QSvgWidget(self.sunrise_path_dark) if self.is_dark_theme() else QSvgWidget(self.sunrise_path_light)
+        #self.sunriseSvg = QSvgWidget(resource_path("resources/maruf_assets/sunrise.svg"))
         self.sunriseSvg.setFixedSize(300, 80)
-        self.sunrise.addWidget(self.sunriseSvg, 75, alignment=QtCore.Qt.AlignLeft)
-        #self.sunriseTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.sunriseTime = QtWidgets.QLabel(self.data.prayerToday.sunrise_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
+        self.sunrise.addWidget(self.sunriseSvg, 75, alignment=Qt.AlignLeft)
+        #self.sunriseTime = QLabel(datetime.min.strftime("%I:%M %p"), alignment=Qt.AlignRight | Qt.AlignVCenter)
+        self.sunriseTime = QLabel(self.data.prayerToday.sunrise_time.strftime("%I:%M %p"), alignment=Qt.AlignCenter)
         self.sunriseTime.setObjectName("mainPrayerTime")
         self.sunriseTime.setFixedWidth(100)
         self.sunrise.addWidget(self.sunriseTime, 25)
         #self.sunrise.addWidget(self.sunriseTime)
         #dhuhr time
-        self.dhuhr = QtWidgets.QHBoxLayout()
-        self.dhuhr_path_dark = resource_path("resources/real/dhuhr.svg")
-        self.dhuhr_path_light = resource_path("resources/real/dhuhr_light.svg")
-        self.dhuhrSvg = QtSvgWidgets.QSvgWidget(self.dhuhr_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.dhuhr_path_light)
-        #self.dhuhrSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/dhuhr.svg"))
+        self.dhuhr = QHBoxLayout()
+        self.dhuhr_path_dark = resource_path("resources/maruf_assets/dhuhr.svg")
+        self.dhuhr_path_light = resource_path("resources/maruf_assets/dhuhr_light.svg")
+        self.dhuhrSvg = QSvgWidget(self.dhuhr_path_dark) if self.is_dark_theme() else QSvgWidget(self.dhuhr_path_light)
+        #self.dhuhrSvg = QSvgWidget(resource_path("resources/maruf_assets/dhuhr.svg"))
         self.dhuhrSvg.setFixedSize(300, 80)
-        self.dhuhr.addWidget(self.dhuhrSvg, 75, alignment=QtCore.Qt.AlignLeft)
-        #self.dhuhrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.dhuhrTime = QtWidgets.QLabel(self.data.prayerToday.dhuhr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
+        self.dhuhr.addWidget(self.dhuhrSvg, 75, alignment=Qt.AlignLeft)
+        #self.dhuhrTime = QLabel(datetime.min.strftime("%I:%M %p"), alignment=Qt.AlignRight | Qt.AlignVCenter)
+        self.dhuhrTime = QLabel(self.data.prayerToday.dhuhr_time.strftime("%I:%M %p"), alignment=Qt.AlignCenter)
         self.dhuhrTime.setObjectName("mainPrayerTime")
         self.dhuhr.addWidget(self.dhuhrTime, 25)
         #self.dhuhr.addWidget(self.dhuhrTime)
         #asr time
-        self.asr = QtWidgets.QHBoxLayout()
-        self.asr_path_dark = resource_path("resources/real/asr.svg")
-        self.asr_path_light = resource_path("resources/real/asr_light.svg")
-        self.asrSvg = QtSvgWidgets.QSvgWidget(self.asr_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.asr_path_light)
-        #self.asrSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/asr.svg"))
+        self.asr = QHBoxLayout()
+        self.asr_path_dark = resource_path("resources/maruf_assets/asr.svg")
+        self.asr_path_light = resource_path("resources/maruf_assets/asr_light.svg")
+        self.asrSvg = QSvgWidget(self.asr_path_dark) if self.is_dark_theme() else QSvgWidget(self.asr_path_light)
+        #self.asrSvg = QSvgWidget(resource_path("resources/maruf_assets/asr.svg"))
         self.asrSvg.setFixedSize(300, 80)
-        self.asr.addWidget(self.asrSvg, 75, alignment=QtCore.Qt.AlignLeft)
-        #self.asrTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.asrTime = QtWidgets.QLabel(self.data.prayerToday.asr_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
+        self.asr.addWidget(self.asrSvg, 75, alignment=Qt.AlignLeft)
+        #self.asrTime = QLabel(datetime.min.strftime("%I:%M %p"), alignment=Qt.AlignRight | Qt.AlignVCenter)
+        self.asrTime = QLabel(self.data.prayerToday.asr_time.strftime("%I:%M %p"), alignment=Qt.AlignCenter)
         self.asrTime.setObjectName("mainPrayerTime")
         self.asr.addWidget(self.asrTime, 25)
         #maghrib time
-        self.maghrib = QtWidgets.QHBoxLayout()
-        self.maghrib_path_dark = resource_path("resources/real/maghrib.svg")
-        self.maghrib_path_light = resource_path("resources/real/maghrib_light.svg")
-        self.maghribSvg = QtSvgWidgets.QSvgWidget(self.maghrib_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.maghrib_path_light)
-        #self.maghribSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/maghrib.svg"))
+        self.maghrib = QHBoxLayout()
+        self.maghrib_path_dark = resource_path("resources/maruf_assets/maghrib.svg")
+        self.maghrib_path_light = resource_path("resources/maruf_assets/maghrib_light.svg")
+        self.maghribSvg = QSvgWidget(self.maghrib_path_dark) if self.is_dark_theme() else QSvgWidget(self.maghrib_path_light)
+        #self.maghribSvg = QSvgWidget(resource_path("resources/maruf_assets/maghrib.svg"))
         self.maghribSvg.setFixedSize(300, 80)
-        self.maghrib.addWidget(self.maghribSvg, 75, alignment=QtCore.Qt.AlignLeft)
-        #self.maghribTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.maghribTime = QtWidgets.QLabel(self.data.prayerToday.maghrib_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
+        self.maghrib.addWidget(self.maghribSvg, 75, alignment=Qt.AlignLeft)
+        #self.maghribTime = QLabel(datetime.min.strftime("%I:%M %p"), alignment=Qt.AlignRight | Qt.AlignVCenter)
+        self.maghribTime = QLabel(self.data.prayerToday.maghrib_time.strftime("%I:%M %p"), alignment=Qt.AlignCenter)
         self.maghribTime.setObjectName("mainPrayerTime")
         #self.maghrib.addWidget(self.maghribTime, 25)
         self.maghrib.addWidget(self.maghribTime, 25)
         #isha time
-        self.isha = QtWidgets.QHBoxLayout()
-        self.isha_path_dark = resource_path("resources/real/isha.svg")
-        self.isha_path_light = resource_path("resources/real/isha_light.svg")
-        self.ishaSvg = QtSvgWidgets.QSvgWidget(self.isha_path_dark) if self.is_dark_theme() else QtSvgWidgets.QSvgWidget(self.isha_path_light)
-        #self.ishaSvg = QtSvgWidgets.QSvgWidget(resource_path("resources/real/isha.svg"))
+        self.isha = QHBoxLayout()
+        self.isha_path_dark = resource_path("resources/maruf_assets/isha.svg")
+        self.isha_path_light = resource_path("resources/maruf_assets/isha_light.svg")
+        self.ishaSvg = QSvgWidget(self.isha_path_dark) if self.is_dark_theme() else QSvgWidget(self.isha_path_light)
+        #self.ishaSvg = QSvgWidget(resource_path("resources/maruf_assets/isha.svg"))
         self.ishaSvg.setFixedSize(300, 80)
-        self.isha.addWidget(self.ishaSvg, 75, alignment=QtCore.Qt.AlignLeft)
-        #self.ishaTime = QtWidgets.QLabel(datetime.min.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.ishaTime = QtWidgets.QLabel(self.data.prayerToday.isha_time.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
+        self.isha.addWidget(self.ishaSvg, 75, alignment=Qt.AlignLeft)
+        #self.ishaTime = QLabel(datetime.min.strftime("%I:%M %p"), alignment=Qt.AlignRight | Qt.AlignVCenter)
+        self.ishaTime = QLabel(self.data.prayerToday.isha_time.strftime("%I:%M %p"), alignment=Qt.AlignCenter)
         self.ishaTime.setObjectName("mainPrayerTime")
         self.isha.addWidget(self.ishaTime, 25)
         #self.isha.addWidget(self.ishaTime)
@@ -304,27 +320,27 @@ class MyWidget(QtWidgets.QWidget):
         self.midLayout.addLayout(self.isha)
 
         #for _ in range(5):
-        #    label = QtWidgets.QLabel(datetime.min.strftime("%I:%M:%S %p"), alignment=QtCore.Qt.AlignCenter)
+        #    label = QLabel(datetime.min.strftime("%I:%M:%S %p"), alignment=Qt.AlignCenter)
         #    label.setObjectName("mainTime")
         #    self.midLayout.addWidget(label)
         self.fajr.setContentsMargins(0,0,0,0)
         self.fajr.setSpacing(0)
         self.midLayout.setContentsMargins(0,0,0,0)
         self.midLayout.setSpacing(0)
-        self.subMidWidget = QtWidgets.QWidget()
+        self.subMidWidget = QWidget()
         self.subMidWidget.setLayout(self.midLayout)
         self.subMidWidget.setFixedWidth(400)
 
-        self.leftLayout = QtWidgets.QVBoxLayout()
+        self.leftLayout = QVBoxLayout()
         for values in self.data.getPrayerYesterday().getPrayertimes().values():
-            #label = QtWidgets.QLabel(datetime.min.strftime("%I:%M:%S %p"), alignment=QtCore.Qt.AlignCenter)
-            label = QtWidgets.QLabel(values.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
+            #label = QLabel(datetime.min.strftime("%I:%M:%S %p"), alignment=Qt.AlignCenter)
+            label = QLabel(values.strftime("%I:%M %p"), alignment=Qt.AlignCenter)
             label.setObjectName("leftTime")
             self.leftLayout.addWidget(label)
 
-        self.rightLayout = QtWidgets.QVBoxLayout()
+        self.rightLayout = QVBoxLayout()
         for values in self.data.getPrayerTomorrow().getPrayertimes().values():
-            label = QtWidgets.QLabel(values.strftime("%I:%M %p"), alignment=QtCore.Qt.AlignCenter)
+            label = QLabel(values.strftime("%I:%M %p"), alignment=Qt.AlignCenter)
             label.setObjectName("leftTime")
             self.rightLayout.addWidget(label)
 
@@ -334,17 +350,20 @@ class MyWidget(QtWidgets.QWidget):
         self.subLayout.addLayout(self.rightLayout, 25)
         self.subLayout.setContentsMargins(0,0,0,0)
         self.subLayout.setSpacing(0)
-        self.midWidget = QtWidgets.QWidget()
+        self.midWidget = QWidget()
         self.midWidget.setLayout(self.subLayout)
         self.midWidget.setFixedHeight(int(.8*600))
         #self.midWidget.setFixedWidth(400)
 
         # bottom
-        self.bottomLayout = QtWidgets.QHBoxLayout()
-        self.settingsButton = QtWidgets.QPushButton(QtGui.QIcon(resource_path("resources/gear.png")), "Settings")
-        self.settingsButton.setIconSize(QtCore.QSize(24,24))
+        self.bottomLayout = QHBoxLayout()
+        self.bottomInfo = QLabel(self.data.getTzDesc(), alignment=Qt.AlignLeft | Qt.AlignVCenter)
+        self.bottomInfo.setObjectName("bottomInfo")
+        self.settingsButton = QPushButton(QIcon(resource_path("resources/maruf_assets/gear.png")), "Settings")
+        self.settingsButton.setIconSize(QSize(24,24))
         self.settingsButton.setObjectName("settingsButton")
-        self.bottomLayout.addWidget(self.settingsButton, alignment=QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom)
+        self.bottomLayout.addWidget(self.bottomInfo)
+        self.bottomLayout.addWidget(self.settingsButton, alignment=Qt.AlignRight | Qt.AlignBottom)
         self.bottomLayout.setSpacing(0)
         self.bottomLayout.setContentsMargins(0,0,0,0)
 
@@ -380,7 +399,7 @@ class MyWidget(QtWidgets.QWidget):
         for i in range(self.leftLayout.count()):
             item = self.leftLayout.itemAt(i)
             widget = item.widget()
-            if widget and isinstance(widget, QtWidgets.QLabel):
+            if widget and isinstance(widget, QLabel):
                 key = yesterkeys[i]
                 widget.setText(self.data.getPrayerYesterday().getPrayertimes()[key].strftime(self.timeFtime))
 
@@ -389,7 +408,7 @@ class MyWidget(QtWidgets.QWidget):
         for i in range(self.rightLayout.count()):
             item = self.rightLayout.itemAt(i)
             widget = item.widget()
-            if widget and isinstance(widget, QtWidgets.QLabel):
+            if widget and isinstance(widget, QLabel):
                 key = tomorrow_keys[i]
                 widget.setText(self.data.getPrayerTomorrow().getPrayertimes()[key].strftime(self.timeFtime))
 
@@ -419,7 +438,7 @@ class MyWidget(QtWidgets.QWidget):
         #print(data.getCalcMethod())
         self.data.setAsrMethod(self.dialog.asrMethodDropdown.currentData())
         #print(f"asr: {self.data.getAsrMethod()}")
-        self.threadz = QtCore.QThread()
+        self.threadz = QThread()
         self.worker = None
         self.loc_thread_done = False
         match(self.dialog.locationBGroup.checkedId()):
@@ -448,7 +467,7 @@ class MyWidget(QtWidgets.QWidget):
             self.worker.finished.connect(self.cleanup_thread)
             #self.threadz.finished.connect(self.threadz.deleteLater)
 
-            self.timeout_timer = QtCore.QTimer(self)
+            self.timeout_timer = QTimer(self)
             self.timeout_timer.setSingleShot(True)
             self.timeout_timer.timeout.connect(self.timeout_thread)
             self.timeout_timer.start(8000) # allow 8 seconds to finish
@@ -462,11 +481,13 @@ class MyWidget(QtWidgets.QWidget):
             case -1:
                 print("no tz checked")
                 if self.data.getTzMethod() != -1:
+                    print("tz method changed...")
                     self.tz_method_changed = True
 
             case 0:
                 print("tz by loc checked")
                 if self.data.getTzMethod() != 0:
+                    print("tz method changed...")
                     self.tz_method_changed = True
                     
             case 1:
@@ -475,7 +496,20 @@ class MyWidget(QtWidgets.QWidget):
                 self.data.setUTCOffset(self.dialog.utcOffsetInput.currentData().total_seconds()/3600.0)
                 self.data.setTzDesc(self.dialog.utcOffsetInput.currentText())
                 #print(self.dialog.utcOffsetInput.currentData().total_seconds()/3600)
+                self.data.setTzMethod(1)
                 print(self.data.getUTCOffset(), self.data.getTzDesc())
+            case 2:
+                print("system tz chosen")
+                if self.data.getTzMethod() != 2:
+                    self.tz_method_changed = True
+                    print("tz method changed...")
+                    local_time = datetime.now().astimezone()
+                    hours = local_time.utcoffset().total_seconds() / 3600.0
+                    name = local_time.tzinfo.key if hasattr(local_time.tzinfo, 'key') else str(local_time.tzinfo)
+                    self.data.setUTCOffset(hours)
+                    display = f"(UTC{'+' if hours >= 0 else ''}{hours:0.1f}) {name}"
+                    self.data.setTzDesc(display)
+                    self.data.setTzMethod(2)
         print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
         #self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
         #self.data.setPrayerYesterday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
@@ -487,6 +521,7 @@ class MyWidget(QtWidgets.QWidget):
         self.updateTimes()
         #self.__initUI()
         self.init_style()
+        #self.set_style_color()
     
     def cleanup_thread(self):
         print("cleaning up threads...")
@@ -508,14 +543,19 @@ class MyWidget(QtWidgets.QWidget):
             self.threadz.quit()
             self.threadz.wait()
 
-    def handle_result(self, result):
+    def handle_result(self, result, mode):
         print("handling result...")
         self.loading_dialog.hide()
         print(f"got: {result}")
         self.data.setLocation(result)
         print("set", self.data.getLocation().getLatitude(), self.data.getLocation().getLongitude())
         self.regionLoc.setText(self.data.getLocation().getDescription())
-        self.data.setLocationMethod(1)
+        if mode == "byQuery":
+            self.data.setLocationMethod(1)
+        elif mode == "byIP":
+            self.data.setLocationMethod(0)
+        else:
+            self.data.setLocationMethod(2)
         if self.data.getTzMethod() == 0:
             offset, name = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
             self.data.setUTCOffset(offset)
@@ -533,7 +573,7 @@ class MyWidget(QtWidgets.QWidget):
         print("rejected")
 
 
-class SettingsDialog(QtWidgets.QDialog):
+class SettingsDialog(QDialog):
     def __init__(self, parent=None, data=pray_data.Data(datetime.now(), pray_data.AppConfig())):
         super().__init__(parent)
     #    self.setStyleSheet('''
@@ -552,32 +592,33 @@ class SettingsDialog(QtWidgets.QDialog):
         self.setWindowTitle("Settings")
         self.data = data
         
-        self.layout = QtWidgets.QVBoxLayout()
+        self.layout = QVBoxLayout()
 
-        #self.layout.addWidget(QtWidgets.QLabel("Settings"), 5, alignment=QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
+        #self.layout.addWidget(QLabel("Settings"), 5, alignment=Qt.AlignHCenter | Qt.AlignTop)
         
         # dark mode
-        self.darkModeGroup = QtWidgets.QGroupBox("App Theme")
-        self.darkModeVBox = QtWidgets.QVBoxLayout()
-        self.darkModeSwitch = QtWidgets.QCheckBox("Dark Mode")
+        self.darkModeGroup = QGroupBox("App Theme")
+        self.darkModeVBox = QVBoxLayout()
+        self.darkModeSwitch = QCheckBox("Dark Mode")
         self.darkModeVBox.addWidget(self.darkModeSwitch)
         self.darkModeGroup.setLayout(self.darkModeVBox)
         self.darkModeSwitch.setChecked(self.data.getDarkMode())
 
         # date/time
-        self.dateTimeGroup = QtWidgets.QGroupBox("Date")
-        self.month_box = QtWidgets.QComboBox()
-        self.day_box = QtWidgets.QComboBox()
-        self.year_box = QtWidgets.QComboBox()
+        self.dateTimeGroup = QGroupBox("Date")
+        self.month_box = QComboBox()
+        self.day_box = QComboBox()
+        self.year_box = QComboBox()
+        self.year_box.setFixedWidth(80)
 
-        self.setup_ui()
+        self.setup_date()
 
-        self.dateTimeBox = QtWidgets.QHBoxLayout()
-        self.dateTimeBox.addWidget(QtWidgets.QLabel("Month"))
+        self.dateTimeBox = QHBoxLayout()
+        self.dateTimeBox.addWidget(QLabel("Month"))
         self.dateTimeBox.addWidget(self.month_box)
-        self.dateTimeBox.addWidget(QtWidgets.QLabel("Day"))
+        self.dateTimeBox.addWidget(QLabel("Day"))
         self.dateTimeBox.addWidget(self.day_box)
-        self.dateTimeBox.addWidget(QtWidgets.QLabel("Year"))
+        self.dateTimeBox.addWidget(QLabel("Year"))
         self.dateTimeBox.addWidget(self.year_box)
         self.dateTimeGroup.setLayout(self.dateTimeBox)
 
@@ -587,20 +628,20 @@ class SettingsDialog(QtWidgets.QDialog):
         self.year_box.setCurrentText(str(self.data.todayDate.year))
 
         # asr method
-        self.asrMethodGroup = QtWidgets.QGroupBox("Asr Calculation Method")
-        self.asrMethodDropdown = QtWidgets.QComboBox()
+        self.asrMethodGroup = QGroupBox("Asr Calculation Method")
+        self.asrMethodDropdown = QComboBox()
         self.asrMethodDropdown.addItem("Shafi'i/Maliki/Hanbali", userData=1)
         self.asrMethodDropdown.addItem("Hanafi", userData=2)
         self.asrMethodDropdown.setCurrentIndex((self.data.getAsrMethod())-1)
-        self.asrMethodBox = QtWidgets.QVBoxLayout()
+        self.asrMethodBox = QVBoxLayout()
         self.asrMethodBox.addWidget(self.asrMethodDropdown)
         self.asrMethodGroup.setLayout(self.asrMethodBox)
 
         
         # calculation method
-        self.calcMethodGroup = QtWidgets.QGroupBox("Fajr/Isha Calculation Method")
-        self.calcMethodVBox = QtWidgets.QVBoxLayout()
-        self.calc_dropdown = QtWidgets.QComboBox()
+        self.calcMethodGroup = QGroupBox("Fajr/Isha Calculation Method")
+        self.calcMethodVBox = QVBoxLayout()
+        self.calc_dropdown = QComboBox()
         for name, method in CalcMethods.methods.items():
             self.calc_dropdown.addItem(str(name), userData=method)
         self.calc_dropdown.addItem(str(self.data.getCalcMethod().name), userData=self.data.getCalcMethod())
@@ -610,15 +651,15 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
         # location
-        self.locationGroup = QtWidgets.QGroupBox("Location Method")
-        self.byIP = QtWidgets.QRadioButton("IPv4 Address (internet required)")
-        self.byQuery = QtWidgets.QRadioButton("Query to Nominatim Service (internet required)")
-        self.byHand = QtWidgets.QRadioButton("Manual Latitude and Longitude")
-        self.locationVBox = QtWidgets.QVBoxLayout()
+        self.locationGroup = QGroupBox("Location Method")
+        self.byIP = QRadioButton("IPv4 Address (internet required)")
+        self.byQuery = QRadioButton("Query to Nominatim Service (internet required)")
+        self.byHand = QRadioButton("Manual Latitude and Longitude")
+        self.locationVBox = QVBoxLayout()
         self.locationVBox.addStretch(1)
         self.locationGroup.setLayout(self.locationVBox)
         # button group
-        self.locationBGroup = QtWidgets.QButtonGroup()
+        self.locationBGroup = QButtonGroup()
         self.locationBGroup.addButton(self.byIP, id=0)
         self.locationBGroup.addButton(self.byQuery, id=1)
         self.locationBGroup.addButton(self.byHand, id=2)
@@ -628,17 +669,17 @@ class SettingsDialog(QtWidgets.QDialog):
         # line edits
         # latitude
         self.manualTooltip = "Enable Manual Latitude and Longitude Option to Edit"
-        self.latitude = QtWidgets.QLineEdit()
+        self.latitude = QLineEdit()
         self.latitude.setPlaceholderText("Latitude")
         self.latitude.setEnabled(False)
         self.latitude.setToolTip(self.manualTooltip)
         # longitude
-        self.longitude = QtWidgets.QLineEdit()
+        self.longitude = QLineEdit()
         self.longitude.setPlaceholderText("Longitude")
         self.longitude.setEnabled(False)
         self.longitude.setToolTip(self.manualTooltip)
         # query
-        self.query = QtWidgets.QLineEdit()
+        self.query = QLineEdit()
         self.query.setPlaceholderText("Enter Region/City Name Here")
         self.query.setEnabled(False)
         self.query.setToolTip("Enable Query Option to Edit")
@@ -661,16 +702,19 @@ class SettingsDialog(QtWidgets.QDialog):
         self.locationVBox.addWidget(self.longitude)
 
         # Timezone/UTC Offset
-        self.utcOffsetGroup = QtWidgets.QGroupBox("Timezone")
-        self.tzByLocation = QtWidgets.QRadioButton("Set Timezone By Location")
-        self.tzByHand = QtWidgets.QRadioButton("Set Timezone Manually")
+        self.utcOffsetGroup = QGroupBox("Timezone")
+        self.tzBySystem = QRadioButton("Set Timezone By System Settings")
+        self.tzBySystem.setToolTip("Maruf will fetch your system timezone settings")
+        self.tzByLocation = QRadioButton("Set Timezone By Location")
+        self.tzByHand = QRadioButton("Set Timezone Manually")
         # button group
-        self.utcOffsetBGroup = QtWidgets.QButtonGroup()
+        self.utcOffsetBGroup = QButtonGroup()
+        self.utcOffsetBGroup.addButton(self.tzBySystem, id =2)
         self.utcOffsetBGroup.addButton(self.tzByLocation, id=0)
         self.utcOffsetBGroup.addButton(self.tzByHand, id=1)
         self.utcOffsetBGroup.setExclusive(True)
         # combo box
-        self.utcOffsetInput = QtWidgets.QComboBox()
+        self.utcOffsetInput = QComboBox()
         self.utcOffsetInput.setEnabled(False)
         self.utcOffsetInput.setToolTip("Enable Set Timezone Manually to Edit")
         self.populate_timezones()
@@ -682,31 +726,34 @@ class SettingsDialog(QtWidgets.QDialog):
             case 1:
                 self.utcOffsetInput.setEnabled(True)
                 self.utcOffsetInput.setCurrentText(self.data.getTzDesc())
+            case 2:
+                pass
 
         # VBox
-        self.utcOffsetVBox = QtWidgets.QVBoxLayout()
+        self.utcOffsetVBox = QVBoxLayout()
         self.utcOffsetGroup.setLayout(self.utcOffsetVBox)
+        self.utcOffsetVBox.addWidget(self.tzBySystem)
         self.utcOffsetVBox.addWidget(self.tzByLocation)
         self.utcOffsetVBox.addWidget(self.tzByHand)
         self.utcOffsetVBox.addWidget(self.utcOffsetInput)
 
 
         # cancel/save button
-        #self.save_button = QtWidgets.QPushButton("Save")
+        #self.save_button = QPushButton("Save")
         #self.save_button.clicked.connect(self.accept)
-        #self.close_button = QtWidgets.QPushButton("Cancel")
+        #self.close_button = QPushButton("Cancel")
         #self.close_button.clicked.connect(self.reject)
-        #self.closeLayout = QtWidgets.QHBoxLayout()
+        #self.closeLayout = QHBoxLayout()
         #self.closeLayout.addWidget(self.close_button, 50)
         #self.closeLayout.addWidget(self.save_button, 50)
         
-        self.closeButtons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Save | QtWidgets.QDialogButtonBox.Cancel)
+        self.closeButtons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         self.closeButtons.accepted.connect(self.accept)
         self.closeButtons.rejected.connect(self.reject)
         #self.closeButtons.setCenterButtons(True)
 
 
-        #self.layout.addWidget(QtWidgets.QSpacerItem(20,40))
+        #self.layout.addWidget(QSpacerItem(20,40))
         self.layout.addWidget(self.darkModeGroup)
         self.layout.addWidget(self.dateTimeGroup)
         self.layout.addWidget(self.asrMethodGroup)
@@ -748,20 +795,21 @@ class SettingsDialog(QtWidgets.QDialog):
         self.query.setEnabled(is_query)
 
     def update_tz_options(self):
+        #is_system = self.tzBySystem.isChecked()
         #is_location = self.tzByLocation.isChecked()
         is_custom = self.tzByHand.isChecked()
 
         self.utcOffsetInput.setEnabled(is_custom)
         
-    def setup_ui(self):
+    def setup_date(self):
         # def not copy/p
         # Populate months
         for month in range(1, 13):
-            month_name = QtCore.QDate(2000, month, 1).toString("MMMM")
+            month_name = QDate(2000, month, 1).toString("MMMM")
             self.month_box.addItem(month_name, month)
 
         # Populate years (example: from 1950 to current year + 10)
-        current_year = QtCore.QDate.currentDate().year()
+        current_year = QDate.currentDate().year()
         for year in range(current_year - 100, current_year + 11):
             self.year_box.addItem(str(year), year)
 
@@ -778,7 +826,7 @@ class SettingsDialog(QtWidgets.QDialog):
         if month is None or year is None:
             return
 
-        days_in_month = QtCore.QDate(year, month, 1).daysInMonth()
+        days_in_month = QDate(year, month, 1).daysInMonth()
         current_day = self.day_box.currentText()
 
         self.day_box.blockSignals(True)
@@ -798,7 +846,7 @@ class SettingsDialog(QtWidgets.QDialog):
         year = int(self.year_box.currentText())
         month = self.month_box.currentData()
         day = int(self.day_box.currentText())
-        return QtCore.QDate(year, month, day)
+        return QDate(year, month, day)
 
     def get_selected_datetime(self):
         year = int(self.year_box.currentText())
@@ -808,28 +856,28 @@ class SettingsDialog(QtWidgets.QDialog):
 
 
 
-class LoadingDialog(QtWidgets.QDialog):
+class LoadingDialog(QDialog):
     def __init__(self, parent=None, display="Loading..."):
         super().__init__(parent)
         self.setFixedSize(250,100)
         self.setModal(True)
         self.setWindowTitle("Loading")
-        self.spinner_label = QtWidgets.QLabel(self)
-        self.movie = QtGui.QMovie(resource_path("resources/rolling.gif"))
+        self.spinner_label = QLabel(self)
+        self.movie = QMovie(resource_path("resources/maruf_assets/rolling.gif"))
         self.spinner_label.setMovie(self.movie)
-        self.movie.setScaledSize(QtCore.QSize(32,32))
+        self.movie.setScaledSize(QSize(32,32))
         self.movie.start()
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(QtWidgets.QLabel(display), alignment=QtCore.Qt.AlignCenter)
-        layout.addWidget(self.spinner_label, alignment=QtCore.Qt.AlignCenter)
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel(display), alignment=Qt.AlignCenter)
+        layout.addWidget(self.spinner_label, alignment=Qt.AlignCenter)
         self.setLayout(layout)
 
 
 
-class WebRequestWorker(QtCore.QObject):
-    finished = QtCore.Signal(object)
-    error = QtCore.Signal(str)
+class WebRequestWorker(QObject):
+    finished = Signal(object, str)
+    error = Signal(str)
 
     def __init__(self, mode: str, query=""):
         super().__init__()
@@ -837,8 +885,9 @@ class WebRequestWorker(QtCore.QObject):
         self.query = query
         self.location = zapp.Location()
 
-    @QtCore.Slot()
+    @Slot()
     def run(self):
+        import traceback
         try:
             if self.mode == "byIP":
                 self.location.setLocationByIP()
@@ -846,7 +895,7 @@ class WebRequestWorker(QtCore.QObject):
                 self.location.setLocationByQuery(self.query)
             else:
                 self.location = zapp.Location()
-            self.finished.emit(self.location)
+            self.finished.emit(self.location, self.mode)
         except Exception:
             err_msg = traceback.format_exc()
             self.error.emit(err_msg)
@@ -855,6 +904,7 @@ class WebRequestWorker(QtCore.QObject):
 
 # internet connection check
 def is_connected(hostname, isConnected: list):
+    import socket
     try:
         # see if we can do a dns lookup, return True if it can happen
         host = socket.gethostbyname(hostname)
@@ -868,13 +918,14 @@ def is_connected(hostname, isConnected: list):
     #return
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
+    freeze_support()
+    app = QApplication([])
 
     # 1. Show splash screen
-    #splash_pix = QtGui.QPixmap(400, 300)
-    #splash_pix.fill(QtCore.Qt.black)  # You can use an image instead
-    #splash = QtWidgets.QSplashScreen(splash_pix)
-    #splash.showMessage("Loading app...", QtCore.Qt.AlignBottom | QtCore.Qt.AlignCenter, QtCore.Qt.white)
+    #splash_pix = QPixmap(400, 300)
+    #splash_pix.fill(Qt.black)  # You can use an image instead
+    #splash = QSplashScreen(splash_pix)
+    #splash.showMessage("Loading app...", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
     #splash.show()
 
     #settingsDialog = LoadingDialog()
@@ -889,39 +940,38 @@ if __name__ == "__main__":
     data = pray_data.Data(midnight_today, appConfig)
 
     #print("midnight: ",data.getTodayDate())
-
     hostname = "one.one.one.one" # check for 1.1.1.1 to dns lookup
     #isConnected = [False]
-    isConnected = multiprocessing.Value('b', False)
-    checkInternet = multiprocessing.Process(target=is_connected, args=(hostname, isConnected))
-    checkInternet.start()
-    print("[+] checking internet connectivity...")
-    checkInternet.join(4) # allow 4 seconds for connection to be made, otherwise kill
-    if checkInternet.is_alive():
-        print("[-] dns lookup timeout, terminating process...")
-        checkInternet.kill()
-        checkInternet.join()
-    if isConnected.value:
-        print("[+] internet connectivity check succeeded...")
-    else:
-        print("[-] internet connectivity check failed...")
-    #print("[+] internet connectivity check finished")
+    isConnected = Value('b', False)
+    if not conf_file_exists:
+        checkInternet = Process(target=is_connected, args=(hostname, isConnected))
+        checkInternet.start()
+        print("[+] checking internet connectivity...")
+        checkInternet.join(4) # allow 4 seconds for connection to be made, otherwise kill
+        if checkInternet.is_alive():
+            print("[-] dns lookup timeout, terminating process...")
+            checkInternet.kill()
+            checkInternet.join()
+        if isConnected.value:
+            print("[+] internet connectivity check succeeded...")
+        else:
+            print("[-] internet connectivity check failed...")
+        #print("[+] internet connectivity check finished")
 
 
     #qdarktheme.setup_theme("dark", corner_shape="sharp")
     qdarktheme.setup_theme("dark")
     data.setDarkMode(True)
-    app.setWindowIcon(QtGui.QIcon(resource_path("resources/maruf_icon.png")))
+    app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
     
     widget = MyWidget(isConnected.value, data, conf_file_exists)
     #widget = MyWidget(True, data)
 
-    widget.setWindowIcon(QtGui.QIcon(resource_path("resources/maruf_icon.png")))
+    widget.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
     widget.setFixedSize(800, 600)
     #settingsDialog.accept()
     widget.show()    # 4. Close splash
     #splash.finish(main_win)
-
     app.exec()
     data.exportConfigToFile()
     sys.exit()

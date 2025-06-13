@@ -1,6 +1,6 @@
 #import app
-from app import PrayerTime, CalcMethod, Location, getLocalUTCOffset
-from datetime import datetime, timedelta, timezone, UTC
+from app import PrayerTime, CalcMethod, Location
+from datetime import datetime, timedelta, UTC
 import time
 import toml
 from timezonefinder import TimezoneFinderL
@@ -45,7 +45,7 @@ def get_offset_name(*, lat, lng):
 # class for handling toml configuration file
 class AppConfig:
     def __init__(self, path="config.toml"):
-        print("configuring from file...")
+        #print("configuring from file...")
         self.path = path
         self.data = self.load()
 
@@ -62,7 +62,7 @@ class AppConfig:
     def default(self):
         offset, name = get_offset_name(lat=34.1434, lng=-111.1230)
         return{
-            #"general":{"dark_mode": True, "utc_offset_timezone": getLocalUTCOffset(time.time())},
+            #"general":{"dark_mode": True, "utc_offset_timezone": -7.0},
             "general":{"dark_mode": True, "timezone_utc_offset": offset, "timezone_description": name},
             "prayer_times":{"method_name": "From File: ISNA", "fajr_angle": 15, "isha_angle": -15, "maghrib_to_isha_90": False, "asr_method": 2},
             "location":{"latitude": 34.1434, "longitude": -111.123, "region_description": "Phoenix, AZ"}
@@ -81,12 +81,13 @@ class AppConfig:
 
 class Data():
     def __init__(self, grok: datetime, config: AppConfig):
+        print("data init...")
         self.config = config
         # load config values
         self.location = Location(self.config.data["location"]["latitude"], self.config.data["location"]["longitude"], self.config.data["location"]["region_description"])
         self.calcMethod = CalcMethod(self.config.data["prayer_times"]["method_name"], self.config.data["prayer_times"]["fajr_angle"])
         self.asrMethod = self.config.data["prayer_times"]["asr_method"]
-
+        print("...")
         
         #self.location = Location()
         #print("Data1: ",grok)
@@ -105,19 +106,23 @@ class Data():
         self.locationMethod = 0
         
         # timezone vars
-        offset_tz, desc = get_offset_name(lat=self.location.getLatitude(), lng=self.location.getLongitude())
+        #offset_tz, desc = get_offset_name(lat=self.location.getLatitude(), lng=self.location.getLongitude())
+        print("...")
         self.tzMethod = 0 # from location ^
-        self.tzDesc = desc
+        #self.tzDesc = desc
+        self.tzDesc = self.config.data["general"]["timezone_description"]
         #self.utc_offset = ((datetime.fromtimestamp(system_time).timestamp()) - datetime.fromtimestamp(system_time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0 # from system
-        self.utc_offset = offset_tz
+        #self.utc_offset = offset_tz
+        self.utc_offset = self.config.data["general"]["timezone_utc_offset"]
 
         self.query = ""
-        system_time = time.time()
+        #system_time = time.time()
         #print("UTC offset: ",self.utc_offset)
 
-        self.prayerYesterday = PrayerTime(self.yesterdayDate.month, self.yesterdayDate.day, self.yesterdayDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
-        self.prayerToday = PrayerTime(self.todayDate.month, self.todayDate.day, self.todayDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
-        self.prayerTomorrow = PrayerTime(self.tomorrowDate.month, self.tomorrowDate.day, self.tomorrowDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        #self.prayerYesterday = PrayerTime(self.yesterdayDate.month, self.yesterdayDate.day, self.yesterdayDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        #self.prayerToday = PrayerTime(self.todayDate.month, self.todayDate.day, self.todayDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        #self.prayerTomorrow = PrayerTime(self.tomorrowDate.month, self.tomorrowDate.day, self.tomorrowDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        print("...")
 
 
     def genPrayerTimes(self):

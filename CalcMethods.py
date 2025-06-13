@@ -1,4 +1,4 @@
-from enum import Enum
+#from enum import Enum
 
 # contains individual calc methods
 class CalcMethod:
@@ -12,25 +12,25 @@ class CalcMethod:
         return (self.name)
 
 # defines Enums containing calc methods
-class MethodName(Enum):
-    MUWL = "Muslim World League"
-    ISNA = "Islamic Society of North America"
-    UAQU = "Umm al-Qura"
-    GULF = "Gulf"
-    ALGR = "Algerian"
-    KRCH = "University of Islamic Sciences, Karachi"
-    DYNT = "Diyanet"
-    EGPT = "Egypt"
-    EGPB = "EgyptBis"
-    KMNG = "Kemenag"
-    MUIS = "MUIS"
-    JAKM = "JAKIM"
-    UDIF = "UDIF"
-    FR15 = "France15"
-    FR18 = "France18"
-    TUNS = "Tunisia"
-    THRN = "Tehran"
-    JAFA = "Jafari"
+#class MethodName(Enum):
+#    MUWL = "Muslim World League"
+#    ISNA = "Islamic Society of North America"
+#    UAQU = "Umm al-Qura"
+#    GULF = "Gulf"
+#    ALGR = "Algerian"
+#    KRCH = "University of Islamic Sciences, Karachi"
+#    DYNT = "Diyanet"
+#    EGPT = "Egypt"
+#    EGPB = "EgyptBis"
+#    KMNG = "Kemenag"
+#    MUIS = "MUIS"
+#    JAKM = "JAKIM"
+#    UDIF = "UDIF"
+#    FR15 = "France15"
+#    FR18 = "France18"
+#    TUNS = "Tunisia"
+#    THRN = "Tehran"
+#    JAFA = "Jafari"
 
 methods = {
     "MWL": CalcMethod("MWL", 18.0, 17.0, False),

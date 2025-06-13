@@ -1,5 +1,5 @@
 <p align="center">
-    <img alt="Logo" src="resources/maruf_icon.png" width="128" />
+    <img alt="Logo" src="resources/maruf_assets/maruf_icon.png" width="128" />
     <h1 align="center">Ma'ruf</h1>
 </p>
 
@@ -8,12 +8,12 @@ Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for ca
 
 ## Screenshots
 <p align="center">
-  <img src="resources/main_interface.png" alt="Main Interface" width="600"><br>
+  <img src="resources/screenshots/main_interface.png" alt="Main Interface" width="600"><br>
   <em>Figure: Main Interface</em>
 </p>
 &nbsp;&nbsp;
 <p align="center">
-  <img src="resources/settings_interface.png" alt="Settings Interface" width="400"><br>
+  <img src="resources/screenshots/settings_interface.png" alt="Settings Interface" width="400"><br>
   <em>Figure: Settings Interface</em>
 </p>
 

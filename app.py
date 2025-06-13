@@ -1,19 +1,20 @@
 import math
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict
 from urllib.request import urlopen
 import time
-import argparse
+#import argparse
 import json
-import re
-import ssl
-import certifi
-from geopy.geocoders import Nominatim
+#import re
+#import ssl
+#import certifi
+#from geopy.geocoders import Nominatim
 
 # global variable
 debug = False
 
 def main():
+    import argparse
     parser = argparse.ArgumentParser(
         prog="Ma'ruf",
         description='Calculates islamic prayer times using on-device calculations exclusively',
@@ -204,6 +205,8 @@ def getLocalUTCOffset(time) -> float:
 
 class Location:
     def __init__(self, latitude=0.0, longitude=0.0, description="Custom"):
+        import ssl
+        import certifi
         self.latitude = latitude
         self.longitude = longitude
         self.description = description
@@ -233,9 +236,11 @@ class Location:
         self.latitude = latitude
         self.longitude = longitude
         self.description = desc
-        print(self.description)
+        #print(self.description)
     
     def setLocationByQuery(self, query: str):
+        from geopy.geocoders import Nominatim
+
         geolocator = Nominatim(user_agent='maruf', ssl_context=self.__ssl_context)
         # TODO: Actual exception handling
         location = geolocator.geocode(query)
@@ -252,6 +257,7 @@ class Location:
         self.description = "Custom Location"
     
 def processQuery(query: str) -> str:
+    import re
     query = query.strip()
     if not re.match(r"^^[A-Za-z0-9\s.'\-&,]+$", query):
         raise ValueError("Error! Only non-empty alphanumeric characters allowed.")
@@ -271,6 +277,7 @@ class CalcMethod:
         return (self.name)
 
 class PrayerTime:
+    #from geopy.geocoders import Nominatim
     ASR_METHOD: int = 1
     #CalcMethod = namedtuple("CalcMethod", ["name", "fajr_angle", "isha_angle", "fixed"])
     __ts = time.time()
@@ -278,7 +285,7 @@ class PrayerTime:
     __day = 0
     __year = 0
     __utc_offset = 0.0
-    __geolocator = Nominatim(user_agent='maruf')
+    #__geolocator = Nominatim(user_agent='maruf')
     __daysDecimal = 0.0
     __latitude = None
     __longitude = None
@@ -462,11 +469,13 @@ class PrayerTime:
         #asr_del = (1/15)*(math.degrees(math.acos(top/bottom)))
                 # Asr shadow length formula
         angle = math.degrees(self.arccot(asrMethod + math.tan(abs(math.radians(Lat - D)))))
+        #print("asr angle: ", angle)
 
         # Compute hour angle
         numerator = math.sin(math.radians(angle)) - math.sin(math.radians(Lat)) * math.sin(math.radians(D))
         denominator = math.cos(math.radians(Lat)) * math.cos(math.radians(D))
         hour_angle = math.acos(numerator / denominator)
+        #print("hour_angle_asr: ", hour_angle)
 
         # Convert to time (1 hour = 15 degrees)
         asr_diff_hours = math.degrees(hour_angle) / 15.0
