@@ -239,6 +239,8 @@ class Location:
         #print(self.description)
     
     def setLocationByQuery(self, query: str):
+        import ssl
+        import certifi
         from geopy.geocoders import Nominatim
 
         geolocator = Nominatim(user_agent='maruf', ssl_context=self.__ssl_context)

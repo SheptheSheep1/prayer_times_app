@@ -1,7 +1,7 @@
 import sys
 import pray_data
-from PySide6.QtCore import QThread, Qt, QTimer, QDate, QSize, QObject, Signal, Slot
-from PySide6.QtGui import QIcon, QMovie
+from PySide6.QtCore import QThread, Qt, QTimer, QDate, QSize, QObject, Signal, Slot, QRegularExpression
+from PySide6.QtGui import QIcon, QMovie, QRegularExpressionValidator
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, QComboBox, QGroupBox, QCheckBox, QDialogButtonBox, QRadioButton, QDialogButtonBox, QApplication, QButtonGroup
 #from PySide6 import    QtSvgWidgets
@@ -32,7 +32,10 @@ from zoneinfo import ZoneInfo, available_timezones
 #    return os.path.join(base_path, relative_path)
 def resource_path(relative_path):
     # Detect compiled (Nuitka) mode
-    if getattr(sys, 'frozen', False) or '__compiled__' in globals():
+    if hasattr(sys, '_MEIPASS'): # pyinstaller
+        base_path = sys._MEIPASS
+    elif getattr(sys, 'frozen', False) or '__compiled__' in globals():
+        print("packaged")
         base_path = os.path.dirname(sys.executable)
     else:
         base_path = os.path.dirname(os.path.abspath(__file__))
@@ -110,6 +113,7 @@ class MyWidget(QWidget):
                 QLabel#bottomInfo{
                                 font-size: 10px;
                                 padding-left: 15px;
+                                padding-top: 10px;
                 }
                 QPushButton {
                                 font-size: 16px;
@@ -166,6 +170,7 @@ class MyWidget(QWidget):
                 QLabel#bottomInfo{
                                 font-size: 10px;
                                 padding-left: 15px;
+                                padding-top: 10px;
                 }
                 QPushButton {
                                 font-size: 16px;
@@ -357,12 +362,24 @@ class MyWidget(QWidget):
 
         # bottom
         self.bottomLayout = QHBoxLayout()
-        self.bottomInfo = QLabel(self.data.getTzDesc(), alignment=Qt.AlignLeft | Qt.AlignVCenter)
-        self.bottomInfo.setObjectName("bottomInfo")
+        self.bottomInfo_tz = QLabel(self.data.getTzDesc(), alignment=Qt.AlignCenter)
+        self.bottomInfo_tz.setObjectName("bottomInfo")
+        self.bottomInfo_location_str = f"Lat, Lng: ({self.data.getLocation().getLatitude():.3f}, {self.data.getLocation().getLongitude():.3f})"
+        self.bottomInfo_location = QLabel(self.bottomInfo_location_str, alignment = Qt.AlignCenter)
+        self.bottomInfo_location.setObjectName("bottomInfo")
+        self.bottomInfo_asrmethod_str = f"Asr Method: {self.data.getAsrMethod()}"
+        self.bottomInfo_asrmethod = QLabel(self.bottomInfo_asrmethod_str, alignment=Qt.AlignCenter)
+        self.bottomInfo_asrmethod.setObjectName("bottomInfo")
+        self.bottomInfo_calcmethod_str = f"Fajr Angle: {self.data.getCalcMethod().fajr_angle:2.1f} Isha Angle: {self.data.getCalcMethod().isha_angle:2.1f}"
+        self.bottomInfo_calcmethod = QLabel(self.bottomInfo_calcmethod_str)
+        self.bottomInfo_calcmethod.setObjectName("bottomInfo")
         self.settingsButton = QPushButton(QIcon(resource_path("resources/maruf_assets/gear.png")), "Settings")
         self.settingsButton.setIconSize(QSize(24,24))
         self.settingsButton.setObjectName("settingsButton")
-        self.bottomLayout.addWidget(self.bottomInfo)
+        self.bottomLayout.addWidget(self.bottomInfo_tz)
+        self.bottomLayout.addWidget(self.bottomInfo_location)
+        self.bottomLayout.addWidget(self.bottomInfo_asrmethod)
+        self.bottomLayout.addWidget(self.bottomInfo_calcmethod)
         self.bottomLayout.addWidget(self.settingsButton, alignment=Qt.AlignRight | Qt.AlignBottom)
         self.bottomLayout.setSpacing(0)
         self.bottomLayout.setContentsMargins(0,0,0,0)
@@ -426,6 +443,11 @@ class MyWidget(QWidget):
         self.asrSvg.load(self.asr_path_dark) if self.is_dark_theme() else self.asrSvg.load(self.asr_path_light)
         self.maghribSvg.load(self.maghrib_path_dark) if self.is_dark_theme() else self.maghribSvg.load(self.maghrib_path_light)
         self.ishaSvg.load(self.isha_path_dark) if self.is_dark_theme() else self.ishaSvg.load(self.isha_path_light)
+
+        self.bottomInfo_tz.setText(self.data.getTzDesc())
+        self.bottomInfo_location.setText(self.bottomInfo_location_str)
+        self.bottomInfo_asrmethod.setText(self.bottomInfo_asrmethod_str)
+        self.bottomInfo_calcmethod.setText(self.bottomInfo_calcmethod_str)
         
 
 
@@ -446,15 +468,26 @@ class MyWidget(QWidget):
                 print("no loc checked")
             case 0:
                 print("loc ip check")
-                self.worker = WebRequestWorker("byIP")
+                if self.data.getLocationMethod() != 0:
+                    self.worker = WebRequestWorker("byIP")
+                else:
+                    print("location method not changed, keeping former...")
                 # add loading screen for waiting for request
                 #self.data.getLocation().setLocationByIP()
             case 1:
                 print("loc query check")
-                self.worker = WebRequestWorker("byQuery", str(self.dialog.query.text()))
+                if self.data.getQuery() != str(self.dialog.query.text()) or self.data.getLocationMethod() != 1:
+                    self.worker = WebRequestWorker("byQuery", str(self.dialog.query.text()))
+                else:
+                    print("location method not changed, keeping former...")
                 #self.data.getLocation().setLocationByQuery(self.dialog.query.text())
             case 2:
-                self.data.getLocation().setLocationManually(float(self.dialog.latitude.text()), float(self.dialog.longitude.text()))
+                if (self.data.getLocation().getLatitude()==float(self.dialog.latitude.text())) and (self.data.getLocation().getLongitude()==float(self.dialog.longitude.text())):
+                    print("loc manual not changed, keeping former...")
+                else:
+                    self.data.getLocation().setLocationManually(float(self.dialog.latitude.text()), float(self.dialog.longitude.text()))
+
+
                 print("loc manual check")
         if self.worker is not None:
             self.loading_dialog = LoadingDialog(self)
@@ -543,7 +576,7 @@ class MyWidget(QWidget):
             self.threadz.quit()
             self.threadz.wait()
 
-    def handle_result(self, result, mode):
+    def handle_result(self, result, mode, query):
         print("handling result...")
         self.loading_dialog.hide()
         print(f"got: {result}")
@@ -552,6 +585,7 @@ class MyWidget(QWidget):
         self.regionLoc.setText(self.data.getLocation().getDescription())
         if mode == "byQuery":
             self.data.setLocationMethod(1)
+            self.data.setQuery(query)
         elif mode == "byIP":
             self.data.setLocationMethod(0)
         else:
@@ -607,7 +641,9 @@ class SettingsDialog(QDialog):
         # date/time
         self.dateTimeGroup = QGroupBox("Date")
         self.month_box = QComboBox()
+        self.month_box.setFixedWidth(125)
         self.day_box = QComboBox()
+        self.day_box.setFixedWidth(60)
         self.year_box = QComboBox()
         self.year_box.setFixedWidth(80)
 
@@ -680,18 +716,24 @@ class SettingsDialog(QDialog):
         self.longitude.setToolTip(self.manualTooltip)
         # query
         self.query = QLineEdit()
-        self.query.setPlaceholderText("Enter Region/City Name Here")
+        self.query.setMaxLength(70)
+        self.query.setPlaceholderText("Enter Region/City Name, limited to 70 chars, limit special")
+        pattern = r"^[A-Za-z0-9\s.'\-&,]+$"
+        validator = QRegularExpressionValidator(pattern, self.query)
+        self.query.setValidator(validator)
         self.query.setEnabled(False)
         self.query.setToolTip("Enable Query Option to Edit")
         # pre fill lines
+        self.latitude.setText(str(self.data.getLocation().getLatitude()))
+        self.longitude.setText(str(self.data.getLocation().getLongitude()))
         match self.data.getLocationMethod():
             case 1:
                 self.query.setText(str(self.data.getQuery()))
                 self.query.setEnabled(True)
             case 2:
-                self.latitude.setText(str(self.data.getLocation().getLatitude()))
+                #self.latitude.setText(str(self.data.getLocation().getLatitude()))
                 self.latitude.setEnabled(True)
-                self.longitude.setText(str(self.data.getLocation().getLongitude()))
+                #self.longitude.setText(str(self.data.getLocation().getLongitude()))
                 self.longitude.setEnabled(True)
         # VBox
         self.locationVBox.addWidget(self.byIP)
@@ -716,16 +758,17 @@ class SettingsDialog(QDialog):
         # combo box
         self.utcOffsetInput = QComboBox()
         self.utcOffsetInput.setEnabled(False)
-        self.utcOffsetInput.setToolTip("Enable Set Timezone Manually to Edit")
+        self.utcOffsetInput.setToolTip("Currently Set Timezone; Enable Set Timezone Manually to Edit")
         self.populate_timezones()
         self.utcOffsetBGroup.button(self.data.getTzMethod()).setChecked(True)
         self.utcOffsetBGroup.buttonClicked.connect(self.update_tz_options)
+        self.utcOffsetInput.setCurrentText(self.data.getTzDesc())
         match self.data.getTzMethod():
             case 0:
                 pass
             case 1:
                 self.utcOffsetInput.setEnabled(True)
-                self.utcOffsetInput.setCurrentText(self.data.getTzDesc())
+                #self.utcOffsetInput.setCurrentText(self.data.getTzDesc())
             case 2:
                 pass
 
@@ -876,7 +919,7 @@ class LoadingDialog(QDialog):
 
 
 class WebRequestWorker(QObject):
-    finished = Signal(object, str)
+    finished = Signal(object, str, str)
     error = Signal(str)
 
     def __init__(self, mode: str, query=""):
@@ -895,7 +938,7 @@ class WebRequestWorker(QObject):
                 self.location.setLocationByQuery(self.query)
             else:
                 self.location = zapp.Location()
-            self.finished.emit(self.location, self.mode)
+            self.finished.emit(self.location, self.mode, self.query)
         except Exception:
             err_msg = traceback.format_exc()
             self.error.emit(err_msg)
