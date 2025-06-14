@@ -69,7 +69,7 @@ jobs:
           enable-plugins: pyside6
           include-data-dir: |
             ${{ env.NUMPY_DIR }}=numpy
-            resources=resources
+            resources/maruf_assets=maruf_assets/resources
           include-raw-dir: |
             ${{ env.TIMEZONEFINDER_DIR }}=timezonefinder
 
@@ -87,12 +87,12 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git tag v1.0.${{ github.run_number }}
+          git tag v1.1.${{ github.run_number }}
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
         with:
           name: "Maruf Release v1.0.${{ github.run_number }}"
-          tag_name: "v1.0.${{ github.run_number }}"
+          tag_name: "v1.1.${{ github.run_number }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
