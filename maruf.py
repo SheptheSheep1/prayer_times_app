@@ -35,7 +35,6 @@ def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'): # pyinstaller
         base_path = sys._MEIPASS
     elif getattr(sys, 'frozen', False) or '__compiled__' in globals():
-        print("packaged")
         base_path = os.path.dirname(sys.executable)
     else:
         base_path = os.path.dirname(os.path.abspath(__file__))
