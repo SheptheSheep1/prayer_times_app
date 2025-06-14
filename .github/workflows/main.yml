@@ -70,8 +70,18 @@ jobs:
           include-data-dir: |
             ${{ env.NUMPY_DIR }}/_core=numpy/_core
             resources/maruf_assets=maruf_assets/resources
-          include-raw-dir: |
             ${{ env.TIMEZONEFINDER_DIR }}=timezonefinder
+          include-data-files: |
+            ${{ env.TIMEZONEFINDER_DIR }}/hole_adr2data.bin=timezonefinder/hole_adr2data.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/hole_coord_amount.bin=timezonefinder/hole_coord_amount.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/hole_data.bin=timezonefinder/hole_data.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/poly_adr2data.bin=timezonefinder/poly_adr2data.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/poly_bounds.bin=timezonefinder/poly_bounds.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/poly_coord_amount.bin=timezonefinder/poly_coord_amount.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/poly_data.bin=timezonefinder/poly_data.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/poly_nr2zone_id.bin=timezonefinder/poly_nr2zone_id.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/poly_zone_ids.bin=timezonefinder/poly_zone_ids.bin
+            ${{ env.TIMEZONEFINDER_DIR }}/shortcuts.bin=timezonefinder/shortcuts.bin
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
