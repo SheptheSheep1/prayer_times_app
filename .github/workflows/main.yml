@@ -68,7 +68,7 @@ jobs:
           mode: onefile
           enable-plugins: pyside6
           include-data-dir: |
-            ${{ env.NUMPY_DIR }}=numpy
+            ${{ env.NUMPY_DIR }}/_core=numpy/_core
             resources/maruf_assets=maruf_assets/resources
           include-raw-dir: |
             ${{ env.TIMEZONEFINDER_DIR }}=timezonefinder
@@ -91,7 +91,7 @@ jobs:
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Maruf Release v1.0.${{ github.run_number }}"
+          name: "Maruf Release v1.1.${{ github.run_number }}"
           tag_name: "v1.1.${{ github.run_number }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -102,6 +102,6 @@ jobs:
           files: |
             build/*.exe
             build/*.bin
-          tag_name: "Maruf Release v1.1.${{ github.run_number }}"
+          tag_name: "v1.1.${{ github.run_number }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
