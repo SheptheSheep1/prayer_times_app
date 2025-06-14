@@ -87,7 +87,7 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git tag v${{ github.run_number }}
+          git tag v1.0.${{ github.run_number }}
       - name: Create Github Release
         uses: softprops/action-gh-release@v2
         with:
@@ -102,6 +102,6 @@ jobs:
           files: |
             build/*.exe
             build/*.bin
-          tag_name: "v${{ github.run_number }}"
+          tag_name: "Maruf Release v1.1.${{ github.run_number }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
