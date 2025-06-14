@@ -53,10 +53,22 @@ jobs:
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
             f.write(f"NUMPY_DIR={os.path.dirname(numpy.__file__).replace('\\\\', '/')}\n")
             f.write(f"TIMEZONEFINDER_DIR={os.path.dirname(timezonefinder.__file__).replace('\\\\', '/')}\n")
+          
+      - name: Set normalized OS and ARCH
+        shell: bash
+        run: |
+          echo "NORM_OS=$(echo $RUNNER_OS | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "NORM_ARCH=$(echo $RUNNER_ARCH | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        env:
+          RUNNER_OS: ${{ runner.os }}
+          RUNNER_ARCH: ${{ runner.arch }}
+
       - name: Debug paths
         run: |
           echo "NUMPY_DIR: ${{ env.NUMPY_DIR }}"
           echo "TIMEZONEFINDER_DIR: ${{ env.TIMEZONEFINDER_DIR }}"
+          echo "RUNNER_OS: ${{ env.NORM_ARCH }}"
+          echo "RUNNER_ARCH: ${{ env.NORM_OS }}"
 
 
 
@@ -82,8 +94,7 @@ jobs:
             ${{ env.TIMEZONEFINDER_DIR }}/poly_nr2zone_id.bin=timezonefinder/poly_nr2zone_id.bin
             ${{ env.TIMEZONEFINDER_DIR }}/poly_zone_ids.bin=timezonefinder/poly_zone_ids.bin
             ${{ env.TIMEZONEFINDER_DIR }}/shortcuts.bin=timezonefinder/shortcuts.bin
-          output-file: |
-            maruf_${{ runner.os }}_${{ runner.arch }}
+          output-file: maruf_${{ env.NORM_OS }}_${{ env.NORM_ARCH }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
