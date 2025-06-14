@@ -116,7 +116,8 @@ jobs:
         with:
           name: "Maruf Release v1.1.${{ github.run_number }}"
           files: |
-            build/*.exe
+            build/maruf_${{ env.NORM_OS }}_${{ env.NORM_ARCH }}
+            build/maruf_${{ env.NORM_OS }}_${{ env.NORM_ARCH }}.exe
             build/*.bin
             LICENSE.md
           tag_name: "v1.1.${{ github.run_number }}"
