@@ -83,7 +83,7 @@ jobs:
             ${{ env.TIMEZONEFINDER_DIR }}/poly_zone_ids.bin=timezonefinder/poly_zone_ids.bin
             ${{ env.TIMEZONEFINDER_DIR }}/shortcuts.bin=timezonefinder/shortcuts.bin
           output-file: |
-            maruf_${{ runner.os,, }}_${{ runner.arch,, }}
+            maruf_${{ runner.os }}_${{ runner.arch }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
