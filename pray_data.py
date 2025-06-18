@@ -1,12 +1,31 @@
 #import app
 from app import PrayerTime, CalcMethod, Location
 from datetime import datetime, timedelta, UTC
+import re
 import time
 import toml
 from timezonefinder import TimezoneFinderL
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, available_timezones
 #from dateutil.relativedelta import relativedelta
 import timeit
+max_len_region_desc = 90
+max_len_method_name = 30
+timezone_description = 80
+
+
+def get_valid_utc_offsets():
+    offsets = set()
+    now = datetime.now()
+    for tz_name in available_timezones():
+        tz = ZoneInfo(tz_name)
+        offset = tz.utcoffset(now)
+        if offset is not None:
+            offsets.add(offset.total_seconds() / 3600)
+    return sorted(offsets)
+
+def get_valid_tz_names():
+    pass
+
 
 #lat, lng to utc_offset
 def get_offset_name(*, lat, lng):
@@ -51,20 +70,30 @@ class AppConfig:
 
     def load(self):
         try:
-            return toml.load(self.path)
+            config = toml.load(self.path)
+            self.checkConfig(config)
+            return config
+        except ValueError as e:
+            print(f"invalid toml...{e}loading default values...")
+            return self.default()
         except FileNotFoundError:
             return self.default()
 
     def save(self):
-        with open(self.path, "w") as f:
-            toml.dump(self.data, f)
+        try:
+            with open(self.path, "w") as f:
+                toml.dump(self.data, f)
+        except PermissionError as e:
+            print(f"Permission denied while writing to {self.path}: {e}")
+        except OSError as e:
+            print(f"OS error while saving file {self.path}: {e}")
 
     def default(self):
         offset, name = get_offset_name(lat=34.1434, lng=-111.1230)
         return{
             #"general":{"dark_mode": True, "utc_offset_timezone": -7.0},
             "general":{"dark_mode": True, "timezone_utc_offset": offset, "timezone_description": name},
-            "prayer_times":{"method_name": "From File: ISNA", "fajr_angle": 15, "isha_angle": -15, "maghrib_to_isha_90": False, "asr_method": 2},
+            "prayer_times":{"method_name": "From File: ISNA", "fajr_offset": 15.0, "isha_offset": 15.0, "maghrib_to_isha_90": False, "asr_method": 2},
             "location":{"latitude": 34.1434, "longitude": -111.123, "region_description": "Phoenix, AZ"}
         }
 
@@ -77,6 +106,74 @@ class AppConfig:
 
     def setData(self, data:dict):
         self.data=data
+    
+
+    def validate_config_types(self, config: dict):
+        #print(type(config["prayer_times"]["fajr_offset"]), config["prayer_times"]["fajr_offset"])
+        errors = []
+    
+        try:
+            general = config["general"]
+            if not isinstance(general.get("dark_mode"), bool):
+                errors.append("general.dark_mode must be a bool")
+            if not isinstance(general.get("timezone_utc_offset"), float):
+                errors.append("general.timezone_utc_offset must be a float")
+            if not isinstance(general.get("timezone_description"), str):
+                errors.append("general.timezone_description must be a string")
+        except KeyError as e:
+            errors.append(f"Missing key in general: {e}")
+    
+        try:
+            prayer = config["prayer_times"]
+            if not isinstance(prayer.get("method_name"), str):
+                errors.append("prayer_times.method_name must be a string")
+            if not isinstance(prayer.get("fajr_offset"), float):
+                errors.append("prayer_times.fajr_offset must be a float")
+            if not isinstance(prayer.get("isha_offset"), float):
+                errors.append("prayer_times.isha_offset must be a float")
+            if not isinstance(prayer.get("maghrib_to_isha_90"), bool):
+                errors.append("prayer_times.maghrib_to_isha_90 must be a bool")
+            if not isinstance(prayer.get("asr_method"), int):
+                errors.append("prayer_times.asr_method must be an int")
+        except KeyError as e:
+            errors.append(f"Missing key in prayer_times: {e}")
+    
+        try:
+            loc = config["location"]
+            if not isinstance(loc.get("latitude"), float):
+                errors.append("location.latitude must be a float")
+            if not isinstance(loc.get("longitude"), float):
+                errors.append("location.longitude must be a float")
+            if not isinstance(loc.get("region_description"), str):
+                errors.append("location.region_description must be a string")
+        except KeyError as e:
+            errors.append(f"Missing key in location: {e}")
+    
+        if errors:
+            raise ValueError("Config validation failed:\n" + "\n".join(errors))
+
+    def truncate_with_ellipsis(self, s: str, max_length: int) -> str:
+        if len(s) <= max_length:
+            return s
+        elif max_length <= 1:
+            return "…"[:max_length]  # fallback if max_length is too small
+        else:
+            return s[:max_length - 1] + "…"
+
+    def checkConfig(self, config):
+        self.validate_config_types(config)
+        if config["general"]["timezone_utc_offset"] in get_valid_utc_offsets():
+            pass
+        else:
+            raise ValueError(f"invalid utc offset {config["general"]["timezone_utc_offset"]}")
+        match = re.fullmatch(r"\(UTC([+-]?\d+(?:\.\d+)?)\)\s+(.+)", config["general"]["timezone_description"] or "")
+        if not match:
+            raise ValueError("Invalid timezone_description format. Expected: (UTC±offset) TimezoneName, using *nix/IANA standard tz/names")
+        else:
+            pass
+        #self.truncate_with_ellipsis(config["general"]["timezone_description"])
+        config["prayer_times"]["method_name"] = self.truncate_with_ellipsis(config["prayer_times"]["method_name"], max_len_method_name)
+        config["location"]["region_description"]= self.truncate_with_ellipsis(config["location"]["region_description"], max_len_region_desc)
 
 
 class Data():
@@ -85,7 +182,7 @@ class Data():
         self.config = config
         # load config values
         self.location = Location(self.config.data["location"]["latitude"], self.config.data["location"]["longitude"], self.config.data["location"]["region_description"])
-        self.calcMethod = CalcMethod(self.config.data["prayer_times"]["method_name"], self.config.data["prayer_times"]["fajr_angle"])
+        self.calcMethod = CalcMethod(self.config.data["prayer_times"]["method_name"], self.config.data["prayer_times"]["fajr_offset"], self.config.data["prayer_times"]["isha_offset"])
         self.asrMethod = self.config.data["prayer_times"]["asr_method"]
         print("...")
         
@@ -137,8 +234,8 @@ class Data():
         self.config.data["general"]["timezone_description"] = self.getTzDesc()
 
         self.config.data["prayer_times"]["method_name"] = self.getCalcMethod().name
-        self.config.data["prayer_times"]["fajr_angle"] = self.getCalcMethod().fajr_angle
-        self.config.data["prayer_times"]["isha_angle"] = self.getCalcMethod().isha_angle
+        self.config.data["prayer_times"]["fajr_offset"] = float(self.getCalcMethod().fajr_angle)
+        self.config.data["prayer_times"]["isha_offset"] = float(self.getCalcMethod().isha_angle)
         self.config.data["prayer_times"]["maghrib_to_isha_90"] = self.getCalcMethod().fixed
         self.config.data["prayer_times"]["asr_method"] = self.getAsrMethod()
 

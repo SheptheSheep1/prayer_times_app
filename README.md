@@ -19,16 +19,16 @@ Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for ca
 
 ## TODOs
 - [x] Add UTC Offset change option
-- [ ] Change UTC Offset when changing location based on coordinates
+- [x] Change UTC Offset when changing location based on coordinates
 - [ ] Include fonts maybe or have better system font defaults for windows
 - [ ] Implement changing time/date display format through `strftime()`
-- [ ] Query character limits/regex
+- [x] Query character limits/regex
 - [x] Add timeout to ip and query threads when loading and exception handling if request doesn't work
-- [ ] Set character limits on region widget
+- [x] Set character limits on region widget
 - [x] Handling system color or set actual dark mode
 - [ ] Custom Calculation Method for fajr and isha
 - [x] Implement TOML persistent config
-- [ ] Handle no rw access in directory
+- [ ] Handle no rw or w access in directory
 - [ ] Handle `None` being returned by `get_offset_name()` in `pray_data` or use Exceptions
 - [ ] Handle error in loading config
 

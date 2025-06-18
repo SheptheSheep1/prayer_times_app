@@ -4,7 +4,6 @@ from PySide6.QtCore import QThread, Qt, QTimer, QDate, QSize, QObject, Signal, S
 from PySide6.QtGui import QIcon, QMovie, QRegularExpressionValidator
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, QComboBox, QGroupBox, QCheckBox, QDialogButtonBox, QRadioButton, QDialogButtonBox, QApplication, QButtonGroup
-#from PySide6 import    QtSvgWidgets
 import app as zapp
 #import random
 #import string
@@ -13,23 +12,9 @@ from multiprocessing import freeze_support, Process, Value
 import CalcMethods
 import os
 import qdarktheme
-#import traceback
-#import time as atime
-#import timeit
 from zoneinfo import ZoneInfo, available_timezones
 #from timezonefinder import TimezoneFinder
 
-#def resource_path(relative_path):
-#    if hasattr(sys, '_MEIPASS'):
-#        base_path = sys._MEIPASS  # For PyInstaller-like environments
-#    elif '__compiled__' in globals():
-#        print("compiled")
-#        base_path = os.path.dirname(sys.executable)
-#    else:
-#        #return os.path.join(os.path.abspath("."), relative_path)
-#        #return relative_path
-#        base_path = os.path.abspath(".")
-#    return os.path.join(base_path, relative_path)
 def resource_path(relative_path):
     # Detect compiled (Nuitka) mode
     if hasattr(sys, '_MEIPASS'): # pyinstaller
@@ -41,9 +26,6 @@ def resource_path(relative_path):
 
     return os.path.normpath(os.path.join(base_path, relative_path))
 
-
-#prayerTime = app.PrayerTime()
-#print(prayerTime)
 class MyWidget(QWidget):
     def __init__(self, isNetwork: bool, data: pray_data.Data, conf_file_existence: bool):
         super().__init__()
@@ -77,7 +59,7 @@ class MyWidget(QWidget):
 
     def init_style(self):
 
-        if self.data.getDarkMode() is True:
+        if self.data.getDarkMode() == True:
             qdarktheme.setup_theme("dark")
             self.setStyleSheet("""
                 QPushButton#another_button {background-color:green; color:black; border-radius: 13px;}
@@ -563,6 +545,7 @@ class MyWidget(QWidget):
         self.threadz.deleteLater()
 
     def error_thread(self, message):
+        print(message)
         print("thread error...keeping location from before save...")
         self.loading_dialog.hide()
         self.timeout_timer.stop()
@@ -681,6 +664,7 @@ class SettingsDialog(QDialog):
             self.calc_dropdown.addItem(str(name), userData=method)
         self.calc_dropdown.addItem(str(self.data.getCalcMethod().name), userData=self.data.getCalcMethod())
         self.calc_dropdown.setCurrentText(str(self.data.getCalcMethod()))
+        #self.calc_dropdown.setCurrentData(self.data.getCalcMethod())
         self.calcMethodVBox.addWidget(self.calc_dropdown)
         self.calcMethodGroup.setLayout(self.calcMethodVBox)
 
@@ -960,6 +944,7 @@ def is_connected(hostname, isConnected: list):
     #return
 
 if __name__ == "__main__":
+    # for windows multiprocessing support
     freeze_support()
     app = QApplication([])
 
@@ -970,20 +955,18 @@ if __name__ == "__main__":
     #splash.showMessage("Loading app...", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
     #splash.show()
 
-    #settingsDialog = LoadingDialog()
-    #settingsDialog.show()
-    #app.processEvents()
-    #atime.sleep(4)
     conf_file_exists = os.path.exists("config.toml")
+
+    # holds data for app persistently, not during runtime
     appConfig = pray_data.AppConfig()
 
     midnight_today = datetime.combine(datetime.today(), time.min)
-    # holds data for app during runtime (app does not store information otherwise)
+
+    # holds data for app during runtime
     data = pray_data.Data(midnight_today, appConfig)
 
     #print("midnight: ",data.getTodayDate())
     hostname = "one.one.one.one" # check for 1.1.1.1 to dns lookup
-    #isConnected = [False]
     isConnected = Value('b', False)
     if not conf_file_exists:
         checkInternet = Process(target=is_connected, args=(hostname, isConnected))
@@ -1007,12 +990,10 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
     
     widget = MyWidget(isConnected.value, data, conf_file_exists)
-    #widget = MyWidget(True, data)
 
     widget.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
     widget.setFixedSize(800, 600)
-    #settingsDialog.accept()
-    widget.show()    # 4. Close splash
+    widget.show()
     #splash.finish(main_win)
     app.exec()
     data.exportConfigToFile()
