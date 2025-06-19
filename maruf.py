@@ -1,12 +1,14 @@
 import sys
 import pray_data
-from PySide6.QtCore import QThread, Qt, QTimer, QDate, QSize, QObject, Signal, Slot, QRegularExpression
-from PySide6.QtGui import QIcon, QMovie, QRegularExpressionValidator
+from PySide6.QtCore import QThread, Qt, QTimer, QDate, QSize, QObject, Signal, Slot, QRegularExpression, QPoint
+from PySide6.QtGui import QIcon, QMovie, QRegularExpressionValidator, QDoubleValidator, QValidator, QPixmap
 from PySide6.QtSvgWidgets import QSvgWidget
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, QComboBox, QGroupBox, QCheckBox, QDialogButtonBox, QRadioButton, QDialogButtonBox, QApplication, QButtonGroup
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, QComboBox, QGroupBox, QCheckBox, QDialogButtonBox, QRadioButton, QDialogButtonBox, QApplication, QButtonGroup, QToolTip, QSplashScreen
 import app as zapp
+from geopy.exc import GeocoderServiceError
 #import random
 #import string
+import time as atime
 from datetime import datetime, time, UTC
 from multiprocessing import freeze_support, Process, Value
 import CalcMethods
@@ -28,31 +30,39 @@ def resource_path(relative_path):
 
 class MyWidget(QWidget):
     def __init__(self, isNetwork: bool, data: pray_data.Data, conf_file_existence: bool):
-        super().__init__()
-        self.data = data
-        self.strftime = ""
-        print("dark mode:",self.data.getDarkMode())
-        if isNetwork and not conf_file_existence:
-            print("net")
-            self.data.setLocationMethod(0)
-            self.data.getLocation().setLocationByIP()
-            #self.location.setLocationByIP()
-            #self.data.setLocation(self.location)
-        elif conf_file_existence:
-            self.data.setLocationMethod(2)
-        else:
-            print("no net")
-            self.data.setLocationMethod(2)
-            self.data.getLocation().setLocationManually(33.5, -112.1)
-            #self.location.setLocationManually(33.5, -112.1)
-            #self.data.setLocation(self.location)
-        self.data.genPrayerTimes()
-        print(f"location: {self.data.getLocation()}")
-        print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
-        self.setWindowTitle("Ma'ruf")
-        self.__initUI()
-        self.init_style()
-        #self.set_style_color()
+        import traceback
+        try:
+            super().__init__()
+            self.data = data
+            print("running..")
+            self.strftime = ""
+            print("dark mode:",self.data.getDarkMode())
+            if isNetwork and not conf_file_existence:
+                print("net")
+                self.data.setLocationMethod(0)
+                self.data.getLocation().setLocationByIP()
+                utcHours, tzName = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
+                #self.location.setLocationByIP()
+                #self.data.setLocation(self.location)
+            elif conf_file_existence:
+                self.data.setLocationMethod(2)
+            else:
+                print("no net")
+                self.data.setLocationMethod(2)
+                self.data.getLocation().setLocationManually(33.5, -112.1)
+                #self.location.setLocationManually(33.5, -112.1)
+                #self.data.setLocation(self.location)
+            self.data.genPrayerTimes()
+            print(f"location: {self.data.getLocation()}")
+            print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
+            self.setWindowTitle("Ma'ruf")
+            self.__initUI()
+            self.init_style()
+            #self.set_style_color()
+        except Exception as e:
+            print("Exception main win: ", e)
+            traceback.print_exc()
+            raise
 
     def is_dark_theme(self):
         return self.data.getDarkMode()
@@ -348,7 +358,7 @@ class MyWidget(QWidget):
         self.bottomInfo_location_str = f"Lat, Lng: ({self.data.getLocation().getLatitude():.3f}, {self.data.getLocation().getLongitude():.3f})"
         self.bottomInfo_location = QLabel(self.bottomInfo_location_str, alignment = Qt.AlignCenter)
         self.bottomInfo_location.setObjectName("bottomInfo")
-        self.bottomInfo_asrmethod_str = f"Asr Method: {self.data.getAsrMethod()}"
+        self.bottomInfo_asrmethod_str = f"Asr Method: {self.data.getAsrMethod()}x"
         self.bottomInfo_asrmethod = QLabel(self.bottomInfo_asrmethod_str, alignment=Qt.AlignCenter)
         self.bottomInfo_asrmethod.setObjectName("bottomInfo")
         self.bottomInfo_calcmethod_str = f"Fajr Angle: {self.data.getCalcMethod().fajr_angle:2.1f} Isha Angle: {self.data.getCalcMethod().isha_angle:2.1f}"
@@ -450,7 +460,11 @@ class MyWidget(QWidget):
             case 0:
                 print("loc ip check")
                 if self.data.getLocationMethod() != 0:
-                    self.worker = WebRequestWorker("byIP")
+                    if self.dialog.utcOffsetBGroup.checkedId() == 0:
+                        print("loc tz ip...")
+                        self.worker = WebRequestWorker("byIPLocTz")
+                    else:
+                        self.worker = WebRequestWorker("byIP")
                 else:
                     print("location method not changed, keeping former...")
                 # add loading screen for waiting for request
@@ -458,7 +472,12 @@ class MyWidget(QWidget):
             case 1:
                 print("loc query check")
                 if self.data.getQuery() != str(self.dialog.query.text()) or self.data.getLocationMethod() != 1:
-                    self.worker = WebRequestWorker("byQuery", str(self.dialog.query.text()))
+                    if self.dialog.utcOffsetBGroup.checkedId() == 0:
+                        print("loc tz query")
+                        self.worker = WebRequestWorker("byQueryLocTz", str(self.dialog.query.text()))
+                    else:
+                        self.worker = WebRequestWorker("byQuery", str(self.dialog.query.text()))
+
                 else:
                     print("location method not changed, keeping former...")
                 #self.data.getLocation().setLocationByQuery(self.dialog.query.text())
@@ -470,25 +489,8 @@ class MyWidget(QWidget):
 
 
                 print("loc manual check")
-        if self.worker is not None:
-            self.loading_dialog = LoadingDialog(self)
-            self.loading_dialog.show()
 
-            self.worker.moveToThread(self.threadz)
-            self.threadz.started.connect(self.worker.run)
-            self.worker.error.connect(self.error_thread)
-            self.worker.finished.connect(self.handle_result)
-            self.worker.finished.connect(self.cleanup_thread)
-            #self.threadz.finished.connect(self.threadz.deleteLater)
 
-            self.timeout_timer = QTimer(self)
-            self.timeout_timer.setSingleShot(True)
-            self.timeout_timer.timeout.connect(self.timeout_thread)
-            self.timeout_timer.start(8000) # allow 8 seconds to finish
-            print("started timer")
-
-            self.threadz.start()
-            #self.threadz.join(5)
         print(f"Coords: {self.data.getLocation()}, {self.data.getLocation().getDescription()}")
         print("location finished")
         match self.dialog.utcOffsetBGroup.checkedId():
@@ -503,7 +505,18 @@ class MyWidget(QWidget):
                 if self.data.getTzMethod() != 0:
                     print("tz method changed...")
                     self.tz_method_changed = True
-                    
+                    if self.worker is None:
+                        print("no location change...using none worker")
+                        self.worker = WebRequestWorker("LocTz", str(), self.data.getLocation().getLatitude(), self.data.getLocation().getLongitude())
+                    #if self.dialog.locationBGroup.checkedId() != 1 or self.dialog.locationBGroup.checkedId():
+                    #    try:
+                    #        loc_offset, loc_name = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
+                    #        self.data.setUTCOffset(loc_offset)
+                    #        self.data.setTzDesc(loc_name)
+                    #        self.data.setTzMethod(0)
+                    #    except ValueError as e:
+                    #        print("invalid location.. not changing tz...")
+
             case 1:
                 print("manual tz chosen")
                 #self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
@@ -524,6 +537,27 @@ class MyWidget(QWidget):
                     display = f"(UTC{'+' if hours >= 0 else ''}{hours:0.1f}) {name}"
                     self.data.setTzDesc(display)
                     self.data.setTzMethod(2)
+
+        if self.worker is not None:
+            self.loading_dialog = LoadingDialog(self)
+            self.loading_dialog.show()
+
+            self.worker.moveToThread(self.threadz)
+            self.threadz.started.connect(self.worker.run)
+            self.worker.error.connect(self.error_thread)
+            self.worker.finished.connect(self.handle_result)
+            self.worker.finishedTz.connect(self.handle_result_tz)
+            self.worker.finished.connect(self.cleanup_thread)
+            #self.threadz.finished.connect(self.threadz.deleteLater)
+
+            self.timeout_timer = QTimer(self)
+            self.timeout_timer.setSingleShot(True)
+            self.timeout_timer.timeout.connect(self.timeout_thread)
+            self.timeout_timer.start(8000) # allow 8 seconds to finish
+            print("started timer")
+
+            self.threadz.start()
+
         print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
         #self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
         #self.data.setPrayerYesterday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
@@ -544,9 +578,11 @@ class MyWidget(QWidget):
         self.worker.deleteLater()
         self.threadz.deleteLater()
 
-    def error_thread(self, message):
+    def error_thread(self, message, exception, index):
         print(message)
-        print("thread error...keeping location from before save...")
+        if index == 1:
+            print("Problem retrieving from Nominatim API...")
+        print("qthread error...keeping location from before save...")
         self.loading_dialog.hide()
         self.timeout_timer.stop()
         self.threadz.quit()
@@ -557,6 +593,36 @@ class MyWidget(QWidget):
             print("loc timed out!")
             self.threadz.quit()
             self.threadz.wait()
+
+    def handle_result_tz(self, result, mode, query, hours, desc):
+        self.loading_dialog.hide()
+        if mode != "LocTz":
+            print("handling resultz...")
+            print(f"got: {result}")
+            self.data.setLocation(result)
+            print("set", self.data.getLocation().getLatitude(), self.data.getLocation().getLongitude())
+            self.regionLoc.setText(self.data.getLocation().getDescription())
+            if mode == "byQuery" or mode == "byQueryLocTz":
+                self.data.setLocationMethod(1)
+                self.data.setQuery(query)
+            elif mode == "byIP" or mode == "byIPLocTz":
+                self.data.setLocationMethod(0)
+            else:
+                self.data.setLocationMethod(2)
+            self.data.setTzDesc(desc)
+            self.data.setUTCOffset(hours)
+            self.data.setTzMethod(0)
+        else:
+            self.data.setTzDesc(desc)
+            self.data.setTzMethod(0)
+            self.data.setUTCOffset(hours)
+        self.recalculateData()
+        self.updateTimes()
+        print("location: ", self.data.getLocation())
+        self.threadz.quit()
+        self.threadz.wait()
+        self.worker.deleteLater()
+        self.threadz.deleteLater()
 
     def handle_result(self, result, mode, query):
         print("handling result...")
@@ -573,10 +639,13 @@ class MyWidget(QWidget):
         else:
             self.data.setLocationMethod(2)
         if self.data.getTzMethod() == 0:
-            offset, name = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
-            self.data.setUTCOffset(offset)
-            self.data.setTzMethod(0)
-            self.data.setTzDesc(name)
+            try:
+                offset, name = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
+                self.data.setUTCOffset(offset)
+                self.data.setTzMethod(0)
+                self.data.setTzDesc(name)
+            except ValueError as e:
+                print(f"Could Not Retrieve Location from Coords... {e}Keeping Previous Values...")
         print(f"set: {self.data.getTzDesc()}")
         self.recalculateData()
         self.updateTimes()
@@ -646,10 +715,10 @@ class SettingsDialog(QDialog):
         self.year_box.setCurrentText(str(self.data.todayDate.year))
 
         # asr method
-        self.asrMethodGroup = QGroupBox("Asr Calculation Method")
+        self.asrMethodGroup = QGroupBox("Asr Calculation Juristic Method")
         self.asrMethodDropdown = QComboBox()
-        self.asrMethodDropdown.addItem("Shafi'i/Maliki/Hanbali", userData=1)
-        self.asrMethodDropdown.addItem("Hanafi", userData=2)
+        self.asrMethodDropdown.addItem("Shafi'i/Maliki/Hanbali (1x)", userData=1)
+        self.asrMethodDropdown.addItem("Hanafi (2x)", userData=2)
         self.asrMethodDropdown.setCurrentIndex((self.data.getAsrMethod())-1)
         self.asrMethodBox = QVBoxLayout()
         self.asrMethodBox.addWidget(self.asrMethodDropdown)
@@ -692,11 +761,15 @@ class SettingsDialog(QDialog):
         self.latitude.setPlaceholderText("Latitude")
         self.latitude.setEnabled(False)
         self.latitude.setToolTip(self.manualTooltip)
+        self.latitude.setValidator(QDoubleValidator(-90.0, 90.0, 6)) # ensures user is not allowed to input values not in range -90 to 90
+        self.latitude.textChanged.connect(self.validate_latitude)
         # longitude
         self.longitude = QLineEdit()
         self.longitude.setPlaceholderText("Longitude")
         self.longitude.setEnabled(False)
         self.longitude.setToolTip(self.manualTooltip)
+        self.longitude.setValidator(QDoubleValidator(-180.0, 180.0, 6))
+        self.longitude.textChanged.connect(self.validate_longitude)
         # query
         self.query = QLineEdit()
         self.query.setMaxLength(70)
@@ -811,11 +884,44 @@ class SettingsDialog(QDialog):
         for utc_timedelta, display in tz_entries:
             self.utcOffsetInput.addItem(display, userData=utc_timedelta)
 
+    def validate_latitude(self):
+        lat = self.latitude.text()
+        #lon = self.longitude.text()
+        if not self.is_valid_lat(lat):
+            self.latitude.setStyleSheet("border: 2px solid red;")
+            #QToolTip.showText(self.latitude.mapToGlobal(QPoint(0, 0)), "Latitude must be between -90 and 90")
+            #show_error("Invalid latitude.")
+        else:
+            self.latitude.setStyleSheet("")
+    def validate_longitude(self):
+        lng = self.longitude.text()
+        if not self.is_valid_lon(lng):
+            self.longitude.setStyleSheet("border: 2px solid red;")
+        else: 
+            self.longitude.setStyleSheet("")
+
+    def is_valid_lat(self, value: str) -> bool:
+        try:
+            val = float(value)
+            return -90.0 <= val <= 90.0
+        except ValueError:
+            return False
+    def is_valid_lon(self, value: str) -> bool:
+        try:
+            val = float(value)
+            return -180.0 <= val <= 180.0
+        except ValueError:
+            return False
 
     def update_location_options(self):
         is_custom = self.byHand.isChecked()
         is_query = self.byQuery.isChecked()
-
+        if not is_custom:
+            self.latitude.setStyleSheet("")
+            self.longitude.setStyleSheet("")
+        elif is_custom:
+            self.validate_latitude()
+            self.validate_longitude()
         self.latitude.setEnabled(is_custom)
         self.longitude.setEnabled(is_custom)
         self.query.setEnabled(is_query)
@@ -899,17 +1005,40 @@ class LoadingDialog(QDialog):
         layout.addWidget(self.spinner_label, alignment=Qt.AlignCenter)
         self.setLayout(layout)
 
+class TZLookupWorker(QObject):
+    finished = Signal(str, float, str)
+    error = Signal(str, Exception)
+    
+    def __init__(self, latitude:float, longitude: float, method=""):
+        super().__init__()
+        self.latitude = latitude
+        self.longitude = longitude
+        self.method = method
+
+    @Slot()
+    def run(self):
+        import traceback
+        if self.method == "byLoc":
+            try:
+                hours, tzDesc = pray_data.get_offset_name(lat=self.latitude, lng=self.longitude)
+                self.finished.emit(self.method, hours, tzDesc)
+            except ValueError as e:
+                err_msg = traceback.format_exc()
+                self.error.emit(err_msg, e)
 
 
 class WebRequestWorker(QObject):
     finished = Signal(object, str, str)
-    error = Signal(str)
+    finishedTz = Signal(object, str, str, float, str)
+    error = Signal(str, Exception, int)
 
-    def __init__(self, mode: str, query=""):
+    def __init__(self, mode: str, query="", lat=0.0, lng=0.0):
         super().__init__()
         self.mode = mode
         self.query = query
         self.location = zapp.Location()
+        self.lat = lat
+        self.lng = lng
 
     @Slot()
     def run(self):
@@ -917,14 +1046,31 @@ class WebRequestWorker(QObject):
         try:
             if self.mode == "byIP":
                 self.location.setLocationByIP()
+                self.finished.emit(self.location, self.mode, self.query)
+            elif self.mode == "byIPLocTz":
+                self.location.setLocationByIP()
+                ipHours, ipDesc = pray_data.get_offset_name(lat=self.location.getLatitude(), lng=self.location.getLongitude())
+                self.finishedTz.emit(self.location, self.mode, self.query, ipHours, ipDesc)
             elif self.mode == "byQuery":
                 self.location.setLocationByQuery(self.query)
+                self.finished.emit(self.location, self.mode, self.query)
+            elif self.mode == "byQueryLocTz":
+                self.location.setLocationByQuery(self.query)
+                qHours, qDesc = pray_data.get_offset_name(lat=self.location.getLatitude(), lng=self.location.getLongitude())
+                self.finishedTz.emit(self.location, self.mode, self.query, qHours, qDesc)
+            elif self.mode == "LocTz":
+                mHours, mDesc = pray_data.get_offset_name(lat=self.lat, lng=self.lng)
+                self.finishedTz.emit(self.location, self.mode, self.query, mHours, mDesc)
             else:
                 self.location = zapp.Location()
-            self.finished.emit(self.location, self.mode, self.query)
-        except Exception:
+                self.finished.emit(self.location, self.mode, self.query)
+            #self.finished.emit(self.location, self.mode, self.query)
+        except GeocoderServiceError as e:
             err_msg = traceback.format_exc()
-            self.error.emit(err_msg)
+            self.error.emit(err_msg, e, 1)
+        except Exception as e:
+            err_msg = traceback.format_exc()
+            self.error.emit(err_msg, e, 0)
 
 
 
@@ -943,11 +1089,33 @@ def is_connected(hostname, isConnected: list):
     isConnected.value = False
     #return
 
+class ConfigThread(QThread):
+    finished_signal = Signal(pray_data.Data) # internet_conn, 
+    error_signal = Signal(str)
+
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        try:
+            atime.sleep(3)
+            print("sleep confing")
+            self.finished_signal.emit(pray_data.Data(datetime.now(), pray_data.AppConfig()))
+        except Exception as e:
+            self.error_signal.emit(str(e))
+
 if __name__ == "__main__":
     # for windows multiprocessing support
     freeze_support()
     app = QApplication([])
-
+    # Show splash screen
+    pixmap = QPixmap(800,600)
+    pixmap.fill(Qt.darkBlue)
+    splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
+    splash.showMessage("Configuring app...", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
+    splash.show()
+    app.processEvents()
+    #atime.sleep(5)
     # 1. Show splash screen
     #splash_pix = QPixmap(400, 300)
     #splash_pix.fill(Qt.black)  # You can use an image instead
@@ -982,18 +1150,45 @@ if __name__ == "__main__":
         else:
             print("[-] internet connectivity check failed...")
         #print("[+] internet connectivity check finished")
+    # Use QTimer for startup delay instead of time.sleep()
+    #widget = None
+    def on_init_finished(data: pray_data.Data):
+        qdarktheme.setup_theme("dark")
+        data.setDarkMode(True)
+        app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
+        
+        # Store widget as app attribute to prevent garbage collection
+        app.main_widget = MyWidget(isConnected.value, data, conf_file_exists)
+        app.main_widget.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
+        app.main_widget.setFixedSize(800, 600)
+        app.main_widget.show()
+        
+        splash.finish(app.main_widget)
+        # Note: splash.finish() already closes the splash, no need for splash.close()
 
+    def on_init_error(error_msg):
+        print(f"Initialization error: {error_msg}")
+        splash.close()
+    
+    # Delay main window creation
+    #QTimer.singleShot(2000, create_main_window)
+
+    config_thread = ConfigThread()
+    config_thread.finished_signal.connect(on_init_finished)
+    config_thread.error_signal.connect(on_init_error)
+    config_thread.start()
 
     #qdarktheme.setup_theme("dark", corner_shape="sharp")
-    qdarktheme.setup_theme("dark")
-    data.setDarkMode(True)
-    app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
-    
-    widget = MyWidget(isConnected.value, data, conf_file_exists)
+    #qdarktheme.setup_theme("dark")
+    #data.setDarkMode(True)
+    #app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
+    ##
+    #widget = MyWidget(isConnected.value, data, conf_file_exists)
+    ##widget = 
 
-    widget.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
-    widget.setFixedSize(800, 600)
-    widget.show()
+    #widget.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
+    #widget.setFixedSize(800, 600)
+    #widget.show()
     #splash.finish(main_win)
     app.exec()
     data.exportConfigToFile()

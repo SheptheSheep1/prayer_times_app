@@ -50,9 +50,9 @@ def get_offset_name(*, lat, lng):
     if offset is None:
         hours = None
         display = None
-    if offset is not None:
-        hours = offset.total_seconds() / 3600
-        display = f"(UTC{'+' if hours >= 0 else ''}{hours:0.1f}) {tz_name}"   #now_utc = datetime.now(tz=ZoneInfo("UTC"))
+        raise ValueError(f"Invalid timezone: {tz}")
+    hours = offset.total_seconds() / 3600
+    display = f"(UTC{'+' if hours >= 0 else ''}{hours:0.1f}) {tz_name}"   #now_utc = datetime.now(tz=ZoneInfo("UTC"))
     #now_local = now_utc.astimezone(ZoneInfo(tz_name))
     #offset_seconds = (now_local.utcoffset().total_seconds())
     end = timeit.timeit()
@@ -78,6 +78,13 @@ class AppConfig:
             return self.default()
         except FileNotFoundError:
             return self.default()
+        except PermissionError as e:
+            print(f"Permission denied while reading from {self.path}: {e}")
+            return self.default()
+        except OSError as e:
+            print(f"OS error while reading from file {self.path}: {e}")
+            return self.default()
+
 
     def save(self):
         try:
@@ -89,7 +96,12 @@ class AppConfig:
             print(f"OS error while saving file {self.path}: {e}")
 
     def default(self):
-        offset, name = get_offset_name(lat=34.1434, lng=-111.1230)
+        try: 
+            offset, name = get_offset_name(lat=34.1434, lng=-111.1230)
+        except ValueError as e:
+            print("Could not find offset from coordinates... {e}... Using defaults")
+            offset = -7.0
+            name = "(UTC-7.0) America/Phoenix"
         return{
             #"general":{"dark_mode": True, "utc_offset_timezone": -7.0},
             "general":{"dark_mode": True, "timezone_utc_offset": offset, "timezone_description": name},
