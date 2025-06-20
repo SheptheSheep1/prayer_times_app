@@ -10,7 +10,7 @@ from geopy.exc import GeocoderServiceError
 #import string
 import time as atime
 from datetime import datetime, time, UTC
-from multiprocessing import freeze_support, Process, Value
+#from multiprocessing import freeze_support, Process, Value
 import CalcMethods
 import os
 import qdarktheme
@@ -29,7 +29,7 @@ def resource_path(relative_path):
     return os.path.normpath(os.path.join(base_path, relative_path))
 
 class MyWidget(QWidget):
-    def __init__(self, isNetwork: bool, data: pray_data.Data, conf_file_existence: bool):
+    def __init__(self, data: pray_data.Data):
         import traceback
         try:
             super().__init__()
@@ -37,24 +37,24 @@ class MyWidget(QWidget):
             print("running..")
             self.strftime = ""
             print("dark mode:",self.data.getDarkMode())
-            if isNetwork and not conf_file_existence:
-                print("net")
-                self.data.setLocationMethod(0)
-                self.data.getLocation().setLocationByIP()
-                utcHours, tzName = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
-                #self.location.setLocationByIP()
-                #self.data.setLocation(self.location)
-            elif conf_file_existence:
-                self.data.setLocationMethod(2)
-            else:
-                print("no net")
-                self.data.setLocationMethod(2)
-                self.data.getLocation().setLocationManually(33.5, -112.1)
-                #self.location.setLocationManually(33.5, -112.1)
-                #self.data.setLocation(self.location)
-            self.data.genPrayerTimes()
-            print(f"location: {self.data.getLocation()}")
-            print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
+            #if isNetwork and not conf_file_existence:
+            #    print("net")
+            #    self.data.setLocationMethod(0)
+            #    self.data.getLocation().setLocationByIP()
+            #    #utcHours, tzName = pray_data.get_offset_name(lat=self.data.getLocation().getLatitude(), lng=self.data.getLocation().getLongitude())
+            #    #self.location.setLocationByIP()
+            #    #self.data.setLocation(self.location)
+            #elif conf_file_existence:
+            #    self.data.setLocationMethod(2)
+            #else:
+            #    print("no net")
+            #    self.data.setLocationMethod(2)
+            #    self.data.getLocation().setLocationManually(33.5, -112.1)
+            #    #self.location.setLocationManually(33.5, -112.1)
+            #    #self.data.setLocation(self.location)
+            #self.data.genPrayerTimes()
+            #print(f"location: {self.data.getLocation()}")
+            #print(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
             self.setWindowTitle("Ma'ruf")
             self.__initUI()
             self.init_style()
@@ -361,7 +361,7 @@ class MyWidget(QWidget):
         self.bottomInfo_asrmethod_str = f"Asr Method: {self.data.getAsrMethod()}x"
         self.bottomInfo_asrmethod = QLabel(self.bottomInfo_asrmethod_str, alignment=Qt.AlignCenter)
         self.bottomInfo_asrmethod.setObjectName("bottomInfo")
-        self.bottomInfo_calcmethod_str = f"Fajr Angle: {self.data.getCalcMethod().fajr_angle:2.1f} Isha Angle: {self.data.getCalcMethod().isha_angle:2.1f}"
+        self.bottomInfo_calcmethod_str = f"Fajr Angle: {self.data.getCalcMethod().fajr_angle:2.1f}  Isha Angle: {self.data.getCalcMethod().isha_angle:2.1f}"
         self.bottomInfo_calcmethod = QLabel(self.bottomInfo_calcmethod_str)
         self.bottomInfo_calcmethod.setObjectName("bottomInfo")
         self.settingsButton = QPushButton(QIcon(resource_path("resources/maruf_assets/gear.png")), "Settings")
@@ -659,7 +659,7 @@ class MyWidget(QWidget):
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, parent=None, data=pray_data.Data(datetime.now(), pray_data.AppConfig())):
+    def __init__(self, parent, data):
         super().__init__(parent)
     #    self.setStyleSheet('''
     #QLineEdit:disabled {
@@ -1005,27 +1005,6 @@ class LoadingDialog(QDialog):
         layout.addWidget(self.spinner_label, alignment=Qt.AlignCenter)
         self.setLayout(layout)
 
-class TZLookupWorker(QObject):
-    finished = Signal(str, float, str)
-    error = Signal(str, Exception)
-    
-    def __init__(self, latitude:float, longitude: float, method=""):
-        super().__init__()
-        self.latitude = latitude
-        self.longitude = longitude
-        self.method = method
-
-    @Slot()
-    def run(self):
-        import traceback
-        if self.method == "byLoc":
-            try:
-                hours, tzDesc = pray_data.get_offset_name(lat=self.latitude, lng=self.longitude)
-                self.finished.emit(self.method, hours, tzDesc)
-            except ValueError as e:
-                err_msg = traceback.format_exc()
-                self.error.emit(err_msg, e)
-
 
 class WebRequestWorker(QObject):
     finished = Signal(object, str, str)
@@ -1090,7 +1069,7 @@ def is_connected(hostname, isConnected: list):
     #return
 
 class ConfigThread(QThread):
-    finished_signal = Signal(pray_data.Data) # internet_conn, 
+    finished_signal = Signal(pray_data.Data, pray_data.AppConfig) # data obj
     error_signal = Signal(str)
 
     def __init__(self):
@@ -1098,82 +1077,123 @@ class ConfigThread(QThread):
 
     def run(self):
         try:
-            atime.sleep(3)
-            print("sleep confing")
-            self.finished_signal.emit(pray_data.Data(datetime.now(), pray_data.AppConfig()))
+            #print("thread run start...")
+            # holds data for app persistently, not during runtime
+            appConfig = pray_data.AppConfig()
+            appConfig.setDataLoad()
+
+            conf_file_exists = os.path.exists("config.toml")
+            midnight_today = datetime.combine(datetime.today(), time.min)
+
+            # holds data for app during runtime
+            data = pray_data.Data(midnight_today, appConfig)
+            #print("data made")
+            if conf_file_exists:
+                data.setLocationMethod(2)
+            else:
+                hostname = "one.one.one.one" # check for 1.1.1.1 to dns lookup
+
+                # internet connectivity test
+                import socket
+                try:
+                    # see if we can do a dns lookup, return True if it can happen
+                    host = socket.gethostbyname(hostname)
+                    s = socket.create_connection((host, 80), 2)
+                    s.close()
+                    isInternet = True
+                    print("[+] internet connectivity check succeeded")
+                except Exception:
+                    print("[-] internet connectivity check failed")
+                    isInternet = False
+
+                if isInternet:
+                    print("[+] Setting IPv4 geolocation, network found")
+                    data.setLocationMethod(0)
+                    data.getLocation().setLocationByIP()
+                    tzHours, tzDesc = pray_data.get_offset_name(lat=data.getLocation().getLatitude(), lng=data.getLocation().getLongitude())
+                    data.setUTCOffset(tzHours)
+                    data.setTzDesc(tzDesc)
+                    data.setTzMethod(0)
+                else:
+                    print("[-] Setting default location, no network")
+                    data.setLocationMethod(2)
+                    data.getLocation().setLocationManually(33.5, -112.1)
+                    #self.location.setLocationManually(33.5, -112.1)
+                    #self.data.setLocation(self.location)
+
+            data.genPrayerTimes()
+            print(f"[+] Location initialized to: {data.getLocation()}")
+            print(f"[+] Timezone initialized to: (utc_offset: {data.getUTCOffset()} desc: {data.getTzDesc()})")
+
+            self.finished_signal.emit(data, appConfig)
+
+        except ImportError as e:
+            print("[!] Error importing socket module...", str(e))
+        except ValueError as e:
+            self.error_signal.emit(str(e))
         except Exception as e:
             self.error_signal.emit(str(e))
 
 if __name__ == "__main__":
     # for windows multiprocessing support
-    freeze_support()
+    #freeze_support()
     app = QApplication([])
     # Show splash screen
     pixmap = QPixmap(800,600)
     pixmap.fill(Qt.darkBlue)
     splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
-    splash.showMessage("Configuring app...", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
-    splash.show()
-    app.processEvents()
-    #atime.sleep(5)
-    # 1. Show splash screen
-    #splash_pix = QPixmap(400, 300)
-    #splash_pix.fill(Qt.black)  # You can use an image instead
-    #splash = QSplashScreen(splash_pix)
-    #splash.showMessage("Loading app...", Qt.AlignBottom | Qt.AlignCenter, Qt.white)
-    #splash.show()
+    splash.showMessage("Configuring app...", Qt.AlignCenter, Qt.white)
 
-    conf_file_exists = os.path.exists("config.toml")
+    if not os.path.exists("config.toml"):
+        splash.show()
+    #app.processEvents()
+    #atime.sleep(5)
+
 
     # holds data for app persistently, not during runtime
-    appConfig = pray_data.AppConfig()
+    #appConfig = pray_data.AppConfig()
 
-    midnight_today = datetime.combine(datetime.today(), time.min)
-
-    # holds data for app during runtime
-    data = pray_data.Data(midnight_today, appConfig)
 
     #print("midnight: ",data.getTodayDate())
-    hostname = "one.one.one.one" # check for 1.1.1.1 to dns lookup
-    isConnected = Value('b', False)
-    if not conf_file_exists:
-        checkInternet = Process(target=is_connected, args=(hostname, isConnected))
-        checkInternet.start()
-        print("[+] checking internet connectivity...")
-        checkInternet.join(4) # allow 4 seconds for connection to be made, otherwise kill
-        if checkInternet.is_alive():
-            print("[-] dns lookup timeout, terminating process...")
-            checkInternet.kill()
-            checkInternet.join()
-        if isConnected.value:
-            print("[+] internet connectivity check succeeded...")
-        else:
-            print("[-] internet connectivity check failed...")
-        #print("[+] internet connectivity check finished")
+    #isConnected = Value('b', False)
+    #if not conf_file_exists:
+    #    checkInternet = Process(target=is_connected, args=(hostname, isConnected))
+    #    checkInternet.start()
+    #    print("[+] checking internet connectivity...")
+    #    checkInternet.join(4) # allow 4 seconds for connection to be made, otherwise kill
+    #    if checkInternet.is_alive():
+    #        print("[-] dns lookup timeout, terminating process...")
+    #        checkInternet.kill()
+    #        checkInternet.join()
+    #    if isConnected.value:
+    #        print("[+] internet connectivity check succeeded...")
+    #    else:
+    #        print("[-] internet connectivity check failed...")
+    #    #print("[+] internet connectivity check finished")
     # Use QTimer for startup delay instead of time.sleep()
     #widget = None
-    def on_init_finished(data: pray_data.Data):
+    global data
+    def on_init_finished(data_conf: pray_data.Data, appconfig: pray_data.AppConfig):
+        global data
+        data = data_conf
         qdarktheme.setup_theme("dark")
         data.setDarkMode(True)
         app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
         
         # Store widget as app attribute to prevent garbage collection
-        app.main_widget = MyWidget(isConnected.value, data, conf_file_exists)
+        app.main_widget = MyWidget(data)
         app.main_widget.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
         app.main_widget.setFixedSize(800, 600)
         app.main_widget.show()
         
         splash.finish(app.main_widget)
-        # Note: splash.finish() already closes the splash, no need for splash.close()
 
     def on_init_error(error_msg):
         print(f"Initialization error: {error_msg}")
         splash.close()
     
-    # Delay main window creation
-    #QTimer.singleShot(2000, create_main_window)
-
     config_thread = ConfigThread()
+    #print("thread made")
     config_thread.finished_signal.connect(on_init_finished)
     config_thread.error_signal.connect(on_init_error)
     config_thread.start()
@@ -1189,7 +1209,6 @@ if __name__ == "__main__":
     #widget.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
     #widget.setFixedSize(800, 600)
     #widget.show()
-    #splash.finish(main_win)
     app.exec()
     data.exportConfigToFile()
     sys.exit()

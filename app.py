@@ -5,6 +5,7 @@ from urllib.request import urlopen
 import time
 #import argparse
 import json
+from CalcMethods import CalcMethod
 #import re
 #import ssl
 #import certifi
@@ -45,6 +46,7 @@ def main():
         print("Must provide latitude(-lat) and longitude(-lng). exiting...")
         exit()
     prayerTime = PrayerTime(doct["month"], doct["day"], doct["year"], doct["utc_offset"], doct["calc_method"], doct["asr_method"], doct["description"], doct["latitude"], doct["longitude"])
+    prayerTime.putPrayerTimes()
     print(prayerTime)
 
 def getDefaultConfig(latitude: float, longitude: float) -> Dict:
@@ -205,12 +207,10 @@ def getLocalUTCOffset(time) -> float:
 
 class Location:
     def __init__(self, latitude=0.0, longitude=0.0, description="Custom"):
-        import ssl
-        import certifi
         self.latitude = latitude
         self.longitude = longitude
         self.description = description
-        self.__ssl_context = ssl.create_default_context(cafile=certifi.where())
+        self.__ssl_context = None
 
     def __str__(self):
         return(f"({self.latitude}, {self.longitude})")
@@ -222,6 +222,9 @@ class Location:
         return self.description
 
     def setLocationByIP(self):
+        #import ssl
+        #import certifi
+        #self.__ssl_context = ssl.create_default_context(cafile=certifi.where())
         url = "http://ip-api.com/json/"
         try:
             with urlopen(url) as response:
@@ -242,6 +245,8 @@ class Location:
         import ssl
         import certifi
         from geopy.geocoders import Nominatim
+
+        self.__ssl_context = ssl.create_default_context(cafile=certifi.where())
 
         geolocator = Nominatim(user_agent='maruf', ssl_context=self.__ssl_context)
         # TODO: Actual exception handling
@@ -268,33 +273,32 @@ def processQuery(query: str) -> str:
     return query
 
 
-class CalcMethod:
-    def __init__(self, name="MWL", fajr_angle=18.0, isha_angle=17.0, fixed=False):
-        self.name = name
-        self.fajr_angle = fajr_angle
-        self.isha_angle = isha_angle
-        self.fixed = fixed
-
-    def __str__(self):
-        return (self.name)
+#class CalcMethod:
+#    def __init__(self, name="MWL", fajr_angle=18.0, isha_angle=17.0, fixed=False):
+#        self.name = name
+#        self.fajr_angle = fajr_angle
+#        self.isha_angle = isha_angle
+#        self.fixed = fixed
+#
+#    def __str__(self):
+#        return (self.name)
 
 class PrayerTime:
     #from geopy.geocoders import Nominatim
     ASR_METHOD: int = 1
     #CalcMethod = namedtuple("CalcMethod", ["name", "fajr_angle", "isha_angle", "fixed"])
-    __ts = time.time()
-    __month = 0
-    __day = 0
-    __year = 0
-    __utc_offset = 0.0
+    #__ts = time.time()
+    #__month = 0
+    #__day = 0
+    #__year = 0
+    #__utc_offset = 0.0
     #__geolocator = Nominatim(user_agent='maruf')
-    __daysDecimal = 0.0
-    __latitude = None
-    __longitude = None
-    __description = ""
-    CALCULATION_METHOD = CalcMethod()
+    #__daysDecimal = 0.0
+    #__latitude = None
+    #__longitude = None
+    #__description = ""
+    #CALCULATION_METHOD = CalcMethod()
 
-    prayerTimes = dict()
 
     fajr_time=datetime.min
     sunrise_time=datetime.min
@@ -303,7 +307,8 @@ class PrayerTime:
     maghrib_time=datetime.min
     isha_time=datetime.min
 
-    def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time()), calc_method=CalcMethod(), asr_method=1, loc_desc="", latitude=34.5, longitude=-111.0):
+    #def __init__(self, month=datetime.now().date().month, day=datetime.now().date().day, year=datetime.now().date().year, utc_offset=getLocalUTCOffset(time.time()), calc_method=CalcMethod(), asr_method=1, loc_desc="", latitude=34.5, longitude=-111.0):
+    def __init__(self, month: int, day: int, year: int, utc_offset: float, calc_method: CalcMethod, asr_method: int, loc_desc: str, latitude: float, longitude: float):
         self.__month = month
         self.__day = day
         self.__year = year
@@ -314,7 +319,8 @@ class PrayerTime:
         self.__description = loc_desc
         self.__latitude = latitude
         self.__longitude = longitude
-        self.prayerTimes = self.__calcPrayerTimes()
+        self.prayerTimes = dict()
+        #self.prayerTimes = self.__calcPrayerTimes()
     
     def setGPScoordinates(self, latitude: float, longitude: float):
         self.__latitude = latitude
@@ -483,8 +489,11 @@ class PrayerTime:
         asr_diff_hours = math.degrees(hour_angle) / 15.0
         return asr_diff_hours
     
+    def putPrayerTimes(self) -> None:
+        self.prayerTimes = self.calcPrayerTimes()
+
     # returns dict with prayertimes as datetime objects
-    def __calcPrayerTimes(self) -> dict:
+    def calcPrayerTimes(self) -> dict:
         JD = self.__calcJD(self.__year, self.__month, self.__daysDecimal)
         T, DELTA = self.__calcSunDeclination(JD)
         ET = self.__calcEqTime(JD)
@@ -524,14 +533,28 @@ class PrayerTime:
 
 
     def __str__(self):
-        return(
-        f"FAJR: {self.fajr_time.strftime("%I:%M:%S %p")}"
-        f"\nSUNRISE: {self.sunrise_time.strftime("%I:%M:%S %p")}"
-        f"\nDHUHR: {self.dhuhr_time.strftime("%I:%M:%S %p")}"
-        f"\nASR: {self.asr_time.strftime("%I:%M:%S %p")}"
-        f"\nMAGHRIB: {self.maghrib_time.strftime("%I:%M:%S %p")}"
-        f"\nISHA: {self.isha_time.strftime("%I:%M:%S %p")}"
-        )
+        retStr = ""
+        for k, v in self.prayerTimes.items():
+            retStr += f"\n{k}: {v}"
+        return retStr
+
+        #f"FAJR: {self.prayerTimes.get("fajr").strftime("%I:%M:%S %p")}"
+        #        f"\nSUNRISE: {self.prayerTimes.get("sunrise").strftime("%I:%M:%S %p")}"
+        #        f"\nDHUHR: {self.prayerTimes.get("dhuhr").strftime("%I:%M:%S %p")}"
+        #        f"\nASR: {self.prayerTimes.get("asr").strftime("%I:%M:%S %p")}"
+        #f"\nMAGHRIB: {self.prayerTimes.get("maghrib").strftime("%I:%M:%S %p")}"
+        #        f"\nISHA: {self.prayerTimes.get("isha").strftime("%I:%M:%S %p")}"
+        
+
+    #def __str__(self):
+    #    return(
+    #    f"FAJR: {self.fajr_time.strftime("%I:%M:%S %p")}"
+    #    f"\nSUNRISE: {self.sunrise_time.strftime("%I:%M:%S %p")}"
+    #    f"\nDHUHR: {self.dhuhr_time.strftime("%I:%M:%S %p")}"
+    #    f"\nASR: {self.asr_time.strftime("%I:%M:%S %p")}"
+    #    f"\nMAGHRIB: {self.maghrib_time.strftime("%I:%M:%S %p")}"
+    #    f"\nISHA: {self.isha_time.strftime("%I:%M:%S %p")}"
+    #    )
 
     
     def convertHrs(self, decimal) -> datetime:

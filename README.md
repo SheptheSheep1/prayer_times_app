@@ -29,9 +29,10 @@ Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for ca
 - [ ] Custom Calculation Method for fajr and isha
 - [x] Implement TOML persistent config
 - [x] Handle no rw or w access in directory
-- [ ] Handle `None` being returned by `get_offset_name()` in `pray_data` or use Exceptions
+- [x] Handle `None` being returned by `get_offset_name()` in `pray_data` or use Exceptions
 - [ ] Handle error in loading config
-- [ ] Add splashscreen and threading/processes to handle initial config
+- [x] Add splashscreen and threading/processes to handle initial config
+- [ ] Add option for reverse geocoding of manual coordinates
 
 ## Credits
 - Would not be possible without the information provided by [Radhi Fadlillah](https://radhifadlillah.com/) and [prayertimes.org](https://www.prayertimes.org/en/prayer-times-calculation-methodology/)

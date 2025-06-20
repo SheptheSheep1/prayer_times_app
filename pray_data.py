@@ -66,7 +66,10 @@ class AppConfig:
     def __init__(self, path="config.toml"):
         #print("configuring from file...")
         self.path = path
-        self.data = self.load()
+        #self.data = self.load()
+
+    def setDataLoad(self) -> None:
+        self.data=self.load()
 
     def load(self):
         try:
@@ -97,7 +100,9 @@ class AppConfig:
 
     def default(self):
         try: 
-            offset, name = get_offset_name(lat=34.1434, lng=-111.1230)
+            #offset, name = get_offset_name(lat=34.1434, lng=-111.1230)
+            offset = -7.0
+            name = "(UTC-7.0) America/Phoenix"
         except ValueError as e:
             print("Could not find offset from coordinates... {e}... Using defaults")
             offset = -7.0
@@ -190,13 +195,13 @@ class AppConfig:
 
 class Data():
     def __init__(self, grok: datetime, config: AppConfig):
-        print("data init...")
+        #print("data init...")
         self.config = config
         # load config values
         self.location = Location(self.config.data["location"]["latitude"], self.config.data["location"]["longitude"], self.config.data["location"]["region_description"])
         self.calcMethod = CalcMethod(self.config.data["prayer_times"]["method_name"], self.config.data["prayer_times"]["fajr_offset"], self.config.data["prayer_times"]["isha_offset"])
         self.asrMethod = self.config.data["prayer_times"]["asr_method"]
-        print("...")
+        #print("...")
         
         #self.location = Location()
         #print("Data1: ",grok)
@@ -216,7 +221,7 @@ class Data():
         
         # timezone vars
         #offset_tz, desc = get_offset_name(lat=self.location.getLatitude(), lng=self.location.getLongitude())
-        print("...")
+        #print("...")
         self.tzMethod = 0 # from location ^
         #self.tzDesc = desc
         self.tzDesc = self.config.data["general"]["timezone_description"]
@@ -231,13 +236,16 @@ class Data():
         #self.prayerYesterday = PrayerTime(self.yesterdayDate.month, self.yesterdayDate.day, self.yesterdayDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
         #self.prayerToday = PrayerTime(self.todayDate.month, self.todayDate.day, self.todayDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
         #self.prayerTomorrow = PrayerTime(self.tomorrowDate.month, self.tomorrowDate.day, self.tomorrowDate.year, self.getUTCOffset(), self.getCalcMethod(), 1, "", self.getLocation().getLatitude(), self.getLocation().getLongitude())
-        print("...")
+        #print("...")
 
 
     def genPrayerTimes(self):
         self.prayerYesterday = PrayerTime(self.yesterdayDate.month, self.yesterdayDate.day, self.yesterdayDate.year, self.getUTCOffset(), self.getCalcMethod(), self.getAsrMethod(), self.getLocation().getDescription(), self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        self.prayerYesterday.putPrayerTimes()
         self.prayerToday = PrayerTime(self.todayDate.month, self.todayDate.day, self.todayDate.year, self.getUTCOffset(), self.getCalcMethod(), self.getAsrMethod(), self.getLocation().getDescription(), self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        self.prayerToday.putPrayerTimes()
         self.prayerTomorrow = PrayerTime(self.tomorrowDate.month, self.tomorrowDate.day, self.tomorrowDate.year, self.getUTCOffset(), self.getCalcMethod(), self.getAsrMethod(), self.getLocation().getDescription(), self.getLocation().getLatitude(), self.getLocation().getLongitude())
+        self.prayerTomorrow.putPrayerTimes()
 
 
     def exportConfigToFile(self):
