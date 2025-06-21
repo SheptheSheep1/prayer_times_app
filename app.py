@@ -5,7 +5,7 @@ from urllib.request import urlopen
 import time
 #import argparse
 import json
-from CalcMethods import CalcMethod
+from CalcMethods import CalcMethod, methods
 #import re
 #import ssl
 #import certifi
@@ -121,7 +121,7 @@ def userInteraction() -> Dict:
     elif (ASR_METHOD == 2):
         method = "2 Shadow Length (Hanafi)"
         dPrint(f"Asr juristic method set to: {method}\n")
-        dPrint("Calculating prayer times...\n")
+    dPrint("Calculating prayer times...\n")
 
     return dict(latitude=location.getLatitude(), longitude=location.getLongitude(), description=location.getDescription(), calc_method=CalcMethod, asr_method=ASR_METHOD, month=month, day=day, year=year, utc_offset=utc_offset)
 
@@ -137,70 +137,30 @@ def getYesNo(question: str) -> bool:
             dPrint("Please answer with 'yes' or 'no'")
 
     
-def promptCalcMethod():
-    print(f'''
-              (1) MWL (Muslim World League) Fajr: 18\N{DEGREE SIGN} Isha: 17\N{DEGREE SIGN}
-              (2) ISNA (Islamic Society of North America) Fajr: 15\N{DEGREE SIGN} Isha: 15\N{DEGREE SIGN}
-              (3) Umm al-Qura (Umm al-Qura University, Makkah) Fajr: 18.5\N{DEGREE SIGN} Isha: 90 mins after Maghrib, 120 mins during Ramadan
-              (4) Gulf Fajr: 19.5\N{DEGREE SIGN} Isha: 90 mins after Maghrib, 120 mins during Ramadan
-              (5) Algerian (Algerian Ministry of Religious Affairs and Wakfs) Fajr: 18\N{DEGREE SIGN} Isha: 17\N{DEGREE SIGN}
-              (6) Karachi (University of Islamic Sciences, Karachi) Fajr: 18\N{DEGREE SIGN} Isha: 18\N{DEGREE SIGN}
-              (7) Diyanet (Diyanet İşleri Başkanlığı, Turkey) Fajr: 18\N{DEGREE SIGN} Isha: 17\N{DEGREE SIGN}
-              (8) Egypt (Egyptian General Authority of Survey) Fajr: 19.5\N{DEGREE SIGN} Isha: 17.5\N{DEGREE SIGN}
-              (9) EgyptBis (Egyptian General Authority of Survey) Fajr: 20\N{DEGREE SIGN} Isha: 18\N{DEGREE SIGN}
-              (10) Kemenag (Kementerian Agama Republik Indonesia) Fajr: 20\N{DEGREE SIGN} Isha: 18\N{DEGREE SIGN}
-              (11) MUIS (Majlis Ugama Islam Singapura) Fajr: 20\N{DEGREE SIGN} Isha: 18\N{DEGREE SIGN}
-              (12) JAKIM (Jabatan Kemajuan Islam Malaysia) Fajr: 20\N{DEGREE SIGN} Isha: 18\N{DEGREE SIGN}
-              (13) UDIF (Union Des Organisations Islamiques De France) Fajr: 12\N{DEGREE SIGN} Isha: 12\N{DEGREE SIGN}
-              (14) France15 Fajr: 15\N{DEGREE SIGN} Isha: 15\N{DEGREE SIGN}
-              (15) France18 Fajr: 18\N{DEGREE SIGN} Isha: 18\N{DEGREE SIGN}
-              (16) Tunisia (Tunisian Ministry of Religious Affairs) Fajr: 18\N{DEGREE SIGN} Isha: 18\N{DEGREE SIGN}
-              (17) Tehran (Institute of Geophysics, University of Tehran) Fajr: 17.7\N{DEGREE SIGN} Isha: 14\N{DEGREE SIGN}
-              (18) Jafari (Shia Ithna Ashari) Fajr: 16\N{DEGREE SIGN} Isha: 14\N{DEGREE SIGN}
-              ''')
+def promptCalcMethod() -> CalcMethod:
+    CALCULATION_METHOD = None
+    count = 0
+    keys = list(methods.keys())
+    print("")
+    for i, key in enumerate(keys, 1):
+        print(f"{i}. {key} (Fajr: {methods[key].fajr_angle} Isha: {methods[key].isha_angle})")
     answer = int(input("\nChoose your calculation method: ").strip())
-    # records calculation method as namedtuple 'CalcMethod' in order to maintain actual name of method as opposed just angles (DEPRECATED)
-    match answer:
-        case 1:
-            CALCULATION_METHOD = CalcMethod("MWL", 18.0, 17.0, False)
-        case 2:
-            CALCULATION_METHOD = CalcMethod("ISNA", 15.0, 15.0, False)
-        case 3:
-            CALCULATION_METHOD = CalcMethod("Umm al-Qura", 18.5, 90, True)
-        case 4:
-            CALCULATION_METHOD = CalcMethod("Gulf", 19.5, 90, True)
-        case 5:
-            CALCULATION_METHOD = CalcMethod("Algerian", 18.0, 17.0, False)
-        case 6:
-            CALCULATION_METHOD = CalcMethod("Karachi", 18.0, 18.0, False)
-        case 7:
-            CALCULATION_METHOD = CalcMethod("Diyanet", 18.0, 17.0, False)
-        case 8:
-            CALCULATION_METHOD = CalcMethod("Egypt", 19.5, 17.5, False)
-        case 9:
-            CALCULATION_METHOD = CalcMethod("EgyptBis", 20.0, 18.0, False)
-        case 10:
-            CALCULATION_METHOD = CalcMethod("Kemenag", 20.0, 18.0, False)
-        case 11:
-            CALCULATION_METHOD = CalcMethod("MUIS", 20.0, 18.0, False)
-        case 12: 
-            CALCULATION_METHOD = CalcMethod("JAKIM", 20.0, 18.0, False)
-        case 13:
-            CALCULATION_METHOD = CalcMethod("UDIF", 12.0, 12.0, False)
-        case 14:
-            CALCULATION_METHOD = CalcMethod("France15", 15.0, 15.0, False)
-        case 15:
-            CALCULATION_METHOD = CalcMethod("France18", 18.0, 18.0, False)
-        case 16:
-            CALCULATION_METHOD = CalcMethod("Tunisia", 18.0, 18.0, False)
-        case 17:
-            CALCULATION_METHOD = CalcMethod("Tehran", 17.7, 14.0, False)
-        case 18:
-            CALCULATION_METHOD = CalcMethod("Jafari", 16.0, 14.0, False)
-        case _:
-            CALCULATION_METHOD = CalcMethod("booh", 18.0, 17.0, False)
+
+    # ensure index is valid
+    index = int(answer) - 1
+    while CALCULATION_METHOD is None:
+        try:
+            if 0 <= index < len(keys):
+                selected_key = keys[index]
+                CALCULATION_METHOD = methods[selected_key]
+                print(f"You chose: {selected_key} with value {methods[selected_key]}")
+            else:
+                print("Invalid choice. Number out of range")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
     return CALCULATION_METHOD
-    dPrint(f"{CALCULATION_METHOD.name} chosen\n")
+
 
 def getLocalUTCOffset(time) -> float:
     return ((datetime.fromtimestamp(time).timestamp()) - datetime.fromtimestamp(time, timezone.utc).replace(tzinfo=None).timestamp())/3600.0
@@ -418,13 +378,16 @@ class PrayerTime:
         dPrint(f"Sun Transit Time: {TT} hours")
         return TT
 
-    def __calcSunAltitudes(self, fajr_angle: float, isha_angle: float, elevation: int, asr_method: int, sunDelta: float, latitude: float) -> dict:
+    def __calcSunAltitudes(self, calcMethod: CalcMethod, elevation: int, asr_method: int, sunDelta: float, latitude: float) -> dict:
+        fajr_angle = calcMethod.fajr_angle
+        isha_angle = calcMethod.isha_angle
+
         SA_FAJR = -(fajr_angle)
         SA_MAGHRIB = -0.8333 - (0.0347 * math.sqrt(elevation))
         SA_SUNRISE = SA_MAGHRIB
         #SA_ASR = math.degrees(math.pow((1/math.tan(math.radians(asr_method + math.tan(math.radians(abs(sunDelta - latitude)))))), -1))
         SA_ASR = math.atan(1/(self.ASR_METHOD+math.tan(math.radians(abs(sunDelta - latitude)))))
-        SA_ISHA = -(isha_angle)
+        SA_ISHA = -(isha_angle) if calcMethod.fixed == False else None
         sunAltitudes = dict(
                 fajr = SA_FAJR,
                 sunrise = SA_SUNRISE,
@@ -440,13 +403,13 @@ class PrayerTime:
         cos_HA_ASR = (math.sin(math.radians(sunAltitudes["asr"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
         cos_HA_MAGHRIB = (math.sin(math.radians(sunAltitudes["sunrise"]))) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta)) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
         cos_HA_SUNRISE = cos_HA_MAGHRIB
-        cos_HA_ISHA = (math.sin(math.radians(sunAltitudes["isha"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta)))
+        cos_HA_ISHA = (math.sin(math.radians(sunAltitudes["isha"])) - math.sin(math.radians(latitude)) * math.sin(math.radians(sunDelta))) / (math.cos(math.radians(latitude)) * math.cos(math.radians(sunDelta))) if sunAltitudes["isha"] is not None else None
 
         HA_FAJR = math.degrees(math.acos(cos_HA_FAJR))
         HA_MAGHRIB = math.degrees(math.acos(cos_HA_MAGHRIB))
         HA_ASR = math.degrees(math.acos(cos_HA_ASR))
         HA_SUNRISE = HA_MAGHRIB
-        HA_ISHA = math.degrees(math.acos(cos_HA_ISHA))
+        HA_ISHA = math.degrees(math.acos(cos_HA_ISHA)) if cos_HA_ISHA is not None else None
 
         hourAngles = dict(
                 fajr= HA_FAJR,
@@ -498,7 +461,7 @@ class PrayerTime:
         T, DELTA = self.__calcSunDeclination(JD)
         ET = self.__calcEqTime(JD)
         TT = self.__calcSunTransitTime(self.__utc_offset, self.__longitude, ET)
-        sunAltitudes = self.__calcSunAltitudes(self.CALCULATION_METHOD.fajr_angle, self.CALCULATION_METHOD.isha_angle, 0, self.ASR_METHOD, DELTA, self.__latitude)
+        sunAltitudes = self.__calcSunAltitudes(self.CALCULATION_METHOD, 0, self.ASR_METHOD, DELTA, self.__latitude)
         hourAngles = self.__calcHourAngles(sunAltitudes, self.__latitude, DELTA)
         
         #asr_time = noon + timedelta(minutes_after_noon)
@@ -511,7 +474,7 @@ class PrayerTime:
         # ASR = TT + hourAngles["asr"] / 15
         ASR = DHUHR + self.__calcAsrDiff(JD, self.__latitude, self.ASR_METHOD)
         MAGHRIB = TT + (hourAngles["maghrib"] / 15)
-        ISHA = TT + hourAngles["isha"] / 15
+        ISHA = (TT + hourAngles["isha"] / 15) if sunAltitudes["isha"] is not None else MAGHRIB + 1.5
         
         dPrint(FAJR)
         prayerTimes = dict (

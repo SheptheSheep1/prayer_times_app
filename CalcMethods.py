@@ -37,7 +37,7 @@ methods = {
     "Islamic Society of North America": CalcMethod("Islamic Society of North America", 15.0, 15.0, False),
     "Umm al-Qura University, Makkah": CalcMethod("Umm al-Qura University, Makkah", 18.5, 0.0, True),
     "Gulf Region": CalcMethod("Gulf Region", 19.5, 0.0, True),
-    "Algerian Ministry of Religious Affairs and Waqfs": CalcMethod("Algerian Ministry of Religious Affairs and Waqfs", 18.0, 17.0, False),
+    "Algerian Ministry of Religious Affairs and Wakfs": CalcMethod("Algerian Ministry of Religious Affairs and Wakfs", 18.0, 17.0, False),
     "University of Islamic Sciences, Karachi": CalcMethod("University of Islamic Sciences, Karachi", 18.0, 18.0, False),
     "Diyanet İşleri Başkanlığı": CalcMethod("Diyanet İşleri Başkanlığı", 18.0, 17.0, False),
     "Egyptian General Authority of Survey": CalcMethod("Egyptian General Authority of Survey", 19.5, 17.5, False),
@@ -50,5 +50,5 @@ methods = {
     u"France Region 18\N{DEGREE SIGN}": CalcMethod(u"France Region 18\N{DEGREE SIGN}", 18.0, 18.0, False),
     "Tunisian Ministry of Religious Affairs": CalcMethod("Tunisian Ministry of Religious Affairs", 18.0, 18.0, False),
     "Institute of Geophysics at University of Tehran": CalcMethod("Institute of Geophysics at University of Tehran", 17.7, 14.0, False),
-    "Jafari: Shia Ithna Ashari": CalcMethod("Jafari: Shia Ithna Ashari", 16.0, 14.0, False)
+    "Shia Ithna Ashari, Leva Institute": CalcMethod("Shia Ithna Ashari, Leva Institute", 16.0, 14.0, False)
 }

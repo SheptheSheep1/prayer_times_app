@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo, available_timezones
 #from dateutil.relativedelta import relativedelta
 import timeit
 max_len_region_desc = 90
-max_len_method_name = 30
+max_len_method_name = 50
 timezone_description = 80
 
 
@@ -56,7 +56,7 @@ def get_offset_name(*, lat, lng):
     #now_local = now_utc.astimezone(ZoneInfo(tz_name))
     #offset_seconds = (now_local.utcoffset().total_seconds())
     end = timeit.timeit()
-    print(end-start)
+    #print(end-start)
     return hours, display
 
 
@@ -95,8 +95,10 @@ class AppConfig:
                 toml.dump(self.data, f)
         except PermissionError as e:
             print(f"Permission denied while writing to {self.path}: {e}")
+            raise e
         except OSError as e:
             print(f"OS error while saving file {self.path}: {e}")
+            raise e
 
     def default(self):
         try: 
@@ -260,12 +262,12 @@ class Data():
         self.config.data["prayer_times"]["asr_method"] = self.getAsrMethod()
 
         self.config.data["location"]["latitude"] = self.getLocation().getLatitude()
-        print("latitude", self.getLocation().getLatitude())
+        #print("latitude", self.getLocation().getLatitude())
         self.config.data["location"]["longitude"] = self.getLocation().getLongitude()
         self.config.data["location"]["region_description"] = self.getLocation().getDescription()
 
         self.config.save()
-        print("saving config to file...")
+        #print("saving config to file...")
 
 
     def setPrayerYesterday(self, prayerTime: PrayerTime):
