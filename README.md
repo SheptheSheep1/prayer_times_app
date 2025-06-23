@@ -4,7 +4,7 @@
 </p>
 
 ## Description
-Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for calculating daily Islamic prayer times locally on your device. Built with PyQt6/PySide6 and precise astronomical algorithms, no internet connection required.
+Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for calculating daily Islamic prayer times locally on your device using the `maruf` python module. Built with PyQt6/PySide6 and precise astronomical algorithms, no internet connection required.
 
 ## Screenshots
 <p align="center">
@@ -63,6 +63,45 @@ pip install -r requirements.txt
 #### Running
 ```bash
 python3 maruf.py
+```
+
+## Using python module `app.py`
+#### Prerequisites
+```python
+geopy.geocoders
+certifi
+```
+- The python module uses the `CalcMethod` class from the `CalcMethods.py` file for storing calculations methods, so this is a prerequisite as well
+### Python
+#### Usage
+```python
+from CalcMethods import CalcMethod
+from app import PrayerTime, Location
+# PrayerTime(month: int, day: int, year: int, utc_offset: float, calc_method: CalcMethod, asr_method: int, loc_desc: str, latitude: float, longitude: float, )
+prayerTime = PrayerTime(7, 3, 2025, -6.0, CalcMethod(), 1, "Ding Dong, Texas, US", 30.974632, -97.777298)
+prayerTime.putPrayerTimes()
+print(prayerTime)
+```
+### CLI
+#### Usage
+```bash
+$ python3 app.py -h
+```
+```
+usage: Ma'ruf [-h] [-b] [-v] [-lat LATITUDE] [-lng LONGITUDE]
+
+Calculates islamic prayer times using on-device calculations exclusively
+
+options:
+  -h, --help            show this help message and exit
+  -b, --headless
+  -v, --verbose
+  -lat, --latitude LATITUDE
+                        input latitude coordinate
+  -lng, --longitude LONGITUDE
+                        input longitude coordinate
+
+Visit <https://github.com/SheptheSheep1/prayer_times_app> for more info and documentation.
 ```
 
 ## TODOs

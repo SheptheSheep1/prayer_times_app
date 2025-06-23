@@ -53,8 +53,8 @@ def getDefaultConfig(latitude: float, longitude: float) -> Dict:
     month = datetime.now().month
     day = datetime.now().day
     year = datetime.now().year
-    #utc_offset = getLocalUTCOffset(time.time())
-    utc_offset = -3.0
+    utc_offset = getLocalUTCOffset(time.time())
+    #utc_offset = -3.0
     asr_method = 1
     description = "Custom"
     latitude = latitude

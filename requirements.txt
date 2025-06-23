@@ -5,7 +5,6 @@ darkdetect==0.7.1
 geographiclib==2.0
 geopy==2.4.1
 h3==4.2.2
-Nuitka==2.7.6
 numpy==2.3.0
 ordered-set==4.1.0
 packaging==25.0
@@ -20,4 +19,5 @@ setuptools==80.9.0
 shiboken6==6.9.0
 timezonefinder==6.5.9
 toml==0.10.2
+wheel==0.45.1
 zstandard==0.23.0

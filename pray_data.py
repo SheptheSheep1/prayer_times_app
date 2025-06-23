@@ -184,7 +184,7 @@ class AppConfig:
         if config["general"]["timezone_utc_offset"] in get_valid_utc_offsets():
             pass
         else:
-            raise ValueError(f"invalid utc offset {config["general"]["timezone_utc_offset"]}")
+            raise ValueError(f"invalid utc offset {config['general']['timezone_utc_offset']}")
         match = re.fullmatch(r"\(UTC([+-]?\d+(?:\.\d+)?)\)\s+(.+)", config["general"]["timezone_description"] or "")
         if not match:
             raise ValueError("Invalid timezone_description format. Expected: (UTC±offset) TimezoneName, using *nix/IANA standard tz/names")
