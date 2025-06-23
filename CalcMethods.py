@@ -11,6 +11,15 @@ class CalcMethod:
     def __str__(self):
         return (self.name)
 
+    def __eq__(self, value: object, /) -> bool:
+        try:
+            if self.name == value.name and self.fajr_angle == value.fajr_angle and self.isha_angle == value.isha_angle and self.fixed == value.fixed:
+                return True
+            else:
+                return False
+        except Exception:
+            return False
+
 # defines Enums containing calc methods
 #class MethodName(Enum):
 #    MUWL = "Muslim World League"

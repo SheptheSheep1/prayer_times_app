@@ -8,14 +8,41 @@ Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for ca
 
 ## Screenshots
 <p align="center">
-  <img src="resources/screenshots/main_interface_v2.png" alt="Main Interface" width="600"><br>
+  <img src="resources/screenshots/main_interface_v3.png" alt="Main Interface" width="600"><br>
   <em>Figure: Main Interface</em>
 </p>
 &nbsp;&nbsp;
 <p align="center">
-  <img src="resources/screenshots/settings_interface_v2.png" alt="Settings Interface" width="400"><br>
+  <img src="resources/screenshots/settings_interface_v3.png" alt="Settings Interface" width="400"><br>
   <em>Figure: Settings Interface</em>
 </p>
+
+## Features
+- Flexible Location Detection
+    - Automatically determines location using:
+        - Manual coordinate entry
+        - Address or place name search via the Nominatim API
+        - IPv4-based geolocation if internet available (no user input required)
+- Accurate Timezone Handling
+    - On-device timezone lookup using `timezonefinder`, no internet required
+    - Option to use the system timezone
+    - Manual timezone override
+- Global Calculation Methods Supported
+ Supports widely used prayer time calculations methods including:
+    - Muslim World League (MWL)
+    - Islamic Society of North America (ISNA)
+    - Umm al-Qura University (Makkah)
+    - and many more...
+- TOML-Based Configuration
+    - Settings including location, timezone method, asr method, and calculation method, can be easily customized via a human-readable `config.toml`. This allows:
+        - Portability and easy sharing of settings
+        - Offline and script-friendly setup
+
+## *How does it work?*
+- Ma'ruf uses an adaptation of Jean Meeus' Astronomical Algorithms in order to calculate sun position and takes into account irregularities in Earth, such as eccentricity and refraction.
+- On first launch, Ma'ruf looks for the existence of a `config.toml` file in its directory (`./config.toml`), checks its validity, and loads from this file, if it does not find this file it will check for internet and use the `ip-api` to get location coordinates from the device's IP address.
+- In the case that there is not internet connectivity, or a very slow response from Cloudflare servers, it will use the defaults of Phoenix, Arizona, United States.
+- The first launch will usually be slower because of the network requests being made, as well as querying the fairly large, included `timezonefinderl` database, but subsequent launches with the configuration file existing will be much faster.
 
 ## TODOs
 - [x] Add UTC Offset change option
@@ -33,8 +60,10 @@ Ma'ruf is a fast, privacy-friendly and cross-platform desktop application for ca
 - [ ] Handle error in loading config
 - [x] Add splashscreen and threading/processes to handle initial config
 - [ ] Add option for reverse geocoding of manual coordinates
+- [ ] High Altitude Correction (more than 48.5 degrees N or S)
 
 ## Credits
 - Would not be possible without the information provided by [Radhi Fadlillah](https://radhifadlillah.com/) and [prayertimes.org](https://www.prayertimes.org/en/prayer-times-calculation-methodology/)
 - [NOAA Solar Calculator](https://gml.noaa.gov/grad/solcalc/)
 - [PrayTimes.org](https://praytimes.org/manual)
+- [Astronomical Algorithms - Jean Meeus (1991)](https://archive.org/details/astronomicalalgorithmsjeanmeeus1991)

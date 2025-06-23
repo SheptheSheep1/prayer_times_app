@@ -53,7 +53,8 @@ def getDefaultConfig(latitude: float, longitude: float) -> Dict:
     month = datetime.now().month
     day = datetime.now().day
     year = datetime.now().year
-    utc_offset = getLocalUTCOffset(time.time())
+    #utc_offset = getLocalUTCOffset(time.time())
+    utc_offset = -3.0
     asr_method = 1
     description = "Custom"
     latitude = latitude
@@ -139,7 +140,6 @@ def getYesNo(question: str) -> bool:
     
 def promptCalcMethod() -> CalcMethod:
     CALCULATION_METHOD = None
-    count = 0
     keys = list(methods.keys())
     print("")
     for i, key in enumerate(keys, 1):
@@ -523,6 +523,8 @@ class PrayerTime:
     def convertHrs(self, decimal) -> datetime:
         # convert a number of hours in decimal to a datetime object
         dPrint(f"decimal: {decimal}")
+
+        decimal = decimal % 24
         # case: negative hours
         if decimal < 0:
             decimal += 24
@@ -575,3 +577,4 @@ def dPrint(input):
 
 if __name__ == "__main__":
     main()
+    utc_offset = -3.0

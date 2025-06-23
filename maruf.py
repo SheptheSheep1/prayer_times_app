@@ -1,4 +1,6 @@
 import sys
+
+from geopy.adapters import URLError
 import pray_data
 from PySide6.QtCore import QThread, Qt, QTimer, QDate, QSize, QObject, Signal, Slot, QRegularExpression, QPoint
 from PySide6.QtGui import QIcon, QMovie, QRegularExpressionValidator, QDoubleValidator, QValidator, QPixmap
@@ -14,6 +16,7 @@ from datetime import datetime, time, UTC
 import CalcMethods
 import os
 import qdarktheme
+from urllib.error import URLError
 from zoneinfo import ZoneInfo, available_timezones
 #from timezonefinder import TimezoneFinder
 
@@ -75,7 +78,7 @@ class MyWidget(QWidget):
                 QPushButton#another_button {background-color:green; color:black; border-radius: 13px;}
                 QLabel#mainTime {
                                font-size: 24px;}
-                QLabel#title{
+                QLabel#title1{
                                 font-family: Helvetica;
                                 font-size: 36px;
                                 padding-left: 15px;
@@ -134,7 +137,7 @@ class MyWidget(QWidget):
                 QLabel {border-radius: 0px}
                 QLabel#mainTime {
                                font-size: 24px;}
-                QLabel#title{
+                QLabel#title1{
                                 font-family: Helvetica;
                                 font-size: 36px;
                                 padding-left: 15px;
@@ -206,7 +209,7 @@ class MyWidget(QWidget):
         self.rightTitleLayout.setContentsMargins(0,0,0,0)
 
         self.titleLayout = QHBoxLayout()
-        self.titleLayout.addWidget(QLabel("Prayer Times", alignment=Qt.AlignLeft | Qt.AlignVCenter, objectName="title"))
+        self.titleLayout.addWidget(QLabel("Prayer Times", alignment=Qt.AlignLeft | Qt.AlignVCenter, objectName="title1"))
         self.titleLayout.setContentsMargins(0,0,0,0)
         self.titleLayout.setSpacing(0)
 
@@ -360,7 +363,7 @@ class MyWidget(QWidget):
         self.bottomLayout_buttons = QHBoxLayout()
         self.bottomInfo_tz = QLabel(self.data.getTzDesc(), alignment=Qt.AlignCenter)
         self.bottomInfo_tz.setObjectName("bottomInfo")
-        self.bottomInfo_location_str = f"Lat, Lng: ({self.data.getLocation().getLatitude():.3f}, {self.data.getLocation().getLongitude():.3f})"
+        self.bottomInfo_location_str = f"Latitude, Longitude: ({self.data.getLocation().getLatitude():.3f}, {self.data.getLocation().getLongitude():.3f})"
         self.bottomInfo_location = QLabel(self.bottomInfo_location_str, alignment = Qt.AlignCenter)
         self.bottomInfo_location.setObjectName("bottomInfo")
         self.bottomInfo_asrmethod_str = f"Asr Method: {self.data.getAsrMethod()}x"
@@ -381,9 +384,9 @@ class MyWidget(QWidget):
         self.saveButton.setObjectName("settingsButton")
         self.saveButton.setToolTip("Save Settings to File")
 
-        self.bottomLayout.addWidget(self.bottomInfo_tz, 25)
-        self.bottomLayout.addWidget(self.bottomInfo_location, 20)
-        self.bottomLayout.addWidget(self.bottomInfo_asrmethod, 15)
+        self.bottomLayout.addWidget(self.bottomInfo_tz, 30)
+        self.bottomLayout.addWidget(self.bottomInfo_location,20)
+        self.bottomLayout.addWidget(self.bottomInfo_asrmethod, 10)
         self.bottomLayout.addWidget(self.bottomInfo_calcmethod, 20)
         #self.bottomLayout.addItem(QSpacerItem(40, 10, QSizePolicy.Fixed, QSizePolicy.Minimum))
         #self.bottomLayout.addStretch()
@@ -413,14 +416,14 @@ class MyWidget(QWidget):
             QMessageBox.information(
                 self,
                 "Information",
-                f"Settings successfully saved to `{self.data.config.path}`",
+                f"Settings successfully saved to: <code>{self.data.config.path}</code>",
                 buttons=QMessageBox.StandardButton.Ok
             )
         except PermissionError:
             QMessageBox.critical(
                 self,
                 "Error",
-                "Permission error on file `config.toml`\nOperation Aborted",
+                "Permission error on file <code>config.toml</code>\nOperation Aborted",
                 buttons=QMessageBox.StandardButton.Ok
             )
         except OSError:
@@ -430,6 +433,25 @@ class MyWidget(QWidget):
                 "OS error while attempting to save\nOperation Aborted",
                 buttons=QMessageBox.StandardButton.Ok
             )
+
+    def error_message(self, exception, error_title, error_message):
+        #QMessageBox.critical(self,
+        #                     str(error_title),
+        #                     str(message),
+        #                     buttons=QMessageBox.StandardButton.Ok)
+        exception_str = ""
+        if hasattr(exception, 'message'):
+            exception_str = exception.message
+        else:
+            exception_str = str(exception)
+
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setWindowTitle(error_title)
+        msg.setText(exception_str + "\nPlease check your network connection.\nNot Saving...")
+        msg.setDetailedText(str(exception) + "\n" + error_message)
+        msg.exec()
+
 
     def __open_settings(self):
         self.dialog = SettingsDialog(self, self.data)
@@ -487,8 +509,9 @@ class MyWidget(QWidget):
         self.settingsButton.setIcon(QIcon(resource_path("resources/maruf_assets/gear_light.png"))) if self.is_dark_theme() else self.settingsButton.setIcon(QIcon(resource_path("resources/maruf_assets/gear_dark.png")))
         
     
+
     def getBottomLocationStr(self) -> str:
-        return f"Lat, Lng: ({self.data.getLocation().getLatitude():.3f}, {self.data.getLocation().getLongitude():.3f})"
+        return f"Latitude, Longitude: ({self.data.getLocation().getLatitude():.3f}, {self.data.getLocation().getLongitude():.3f})"
     
     def getBottomAsrMethodStr(self) -> str:
         return f"Asr Method: {self.data.getAsrMethod()}x"
@@ -498,7 +521,10 @@ class MyWidget(QWidget):
 
 
     def recalculateData(self):
-        self.data.genPrayerTimes()
+        try:
+            self.data.genPrayerTimes()
+        except Exception as e:
+            print(f"exception while regenerating prayer times...{e}")
 
     def dialog_finished(self):
         self.data.setDarkMode(self.dialog.darkModeSwitch.isChecked())
@@ -541,6 +567,7 @@ class MyWidget(QWidget):
                     dPrint("loc manual not changed, keeping former...")
                 else:
                     self.data.getLocation().setLocationManually(float(self.dialog.latitude.text()), float(self.dialog.longitude.text()))
+                    self.data.setLocationMethod(2)
 
 
                 dPrint("loc manual check")
@@ -615,16 +642,12 @@ class MyWidget(QWidget):
 
         dPrint(f"timezone info: (utc_offset: {self.data.getUTCOffset()} desc: {self.data.getTzDesc()})")
         #self.data.setTzMethod(self.dialog.utcOffsetBGroup.checkedId())
-        #self.data.setPrayerYesterday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
-        #self.data.setPrayerTomorrow(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
-        #self.data.setPrayerToday(zapp.PrayerTime(datetime.min.month, datetime.min.day, datetime.min.year))
         self.data.setDate(self.dialog.get_selected_datetime())
         dPrint(f"date: {self.data.getTodayDate()}")
         self.recalculateData()
         self.updateTimes()
         #self.__initUI()
         self.init_style()
-        #self.set_style_color()
     
     def cleanup_thread(self):
         dPrint("cleaning up threads...")
@@ -633,10 +656,11 @@ class MyWidget(QWidget):
         self.worker.deleteLater()
         self.threadz.deleteLater()
 
-    def error_thread(self, message, exception, index):
+    def error_thread(self, message, exception, error_title, index):
         dPrint(message)
         if index == 1:
             dPrint("Problem retrieving from Nominatim API...")
+        self.error_message(exception, error_title, message)
         dPrint("qthread error...keeping location from before save...")
         self.loading_dialog.hide()
         self.timeout_timer.stop()
@@ -784,11 +808,23 @@ class SettingsDialog(QDialog):
         self.calcMethodGroup = QGroupBox("Fajr/Isha Calculation Method")
         self.calcMethodVBox = QVBoxLayout()
         self.calc_dropdown = QComboBox()
-        for name, method in CalcMethods.methods.items():
-            self.calc_dropdown.addItem(str(name), userData=method)
-        self.calc_dropdown.addItem(str(f"{self.data.getCalcMethod().name}"), userData=self.data.getCalcMethod())
-        #TODO: Do not use setCurrentText, switch to setCurrentIndex
-        self.calc_dropdown.setCurrentText(str(self.data.getCalcMethod()))
+        keys = list(CalcMethods.methods.keys())
+        found = False
+        for d_key, value in CalcMethods.methods.items():
+            if self.data.getCalcMethod() == value:
+                print("found")
+                found = True
+        for key in keys:
+            self.calc_dropdown.addItem(str(key), userData=CalcMethods.methods[key])
+        if not found:
+            self.calc_dropdown.addItem(str(f"{self.data.getCalcMethod().name}"), userData=self.data.getCalcMethod())
+            self.calc_dropdown.setCurrentIndex(len(keys))
+        elif found:
+            self.calc_dropdown.setCurrentText(str(self.data.getCalcMethod()))
+
+        #TODO: Do not use setCurrentText, switch to setCurrentIndexa
+        #print(keys.index(self.data.getCalcMethod()))
+        #self.calc_dropdown.setCurrentIndex()
         #self.calc_dropdown.setCurrentData(self.data.getCalcMethod())
         self.calcMethodVBox.addWidget(self.calc_dropdown)
         self.calcMethodGroup.setLayout(self.calcMethodVBox)
@@ -1065,7 +1101,7 @@ class LoadingDialog(QDialog):
 class WebRequestWorker(QObject):
     finished = Signal(object, str, str)
     finishedTz = Signal(object, str, str, float, str)
-    error = Signal(str, Exception, int)
+    error = Signal(str, Exception, str, int)
 
     def __init__(self, mode: str, query="", lat=0.0, lng=0.0):
         super().__init__()
@@ -1100,29 +1136,20 @@ class WebRequestWorker(QObject):
                 self.location = zapp.Location()
                 self.finished.emit(self.location, self.mode, self.query)
             #self.finished.emit(self.location, self.mode, self.query)
+        except ValueError as e:
+            err_msg = traceback.format_exc()
+            self.error.emit(err_msg, e, "Invalid Value", 3)
         except GeocoderServiceError as e:
             err_msg = traceback.format_exc()
-            self.error.emit(err_msg, e, 1)
+            self.error.emit(err_msg, e, "Nominatim API Error", 1)
+        except URLError as e:
+            err_msg = traceback.format_exc()
+            self.error.emit(err_msg, e, "Error while Opening URL", 2)
         except Exception as e:
             err_msg = traceback.format_exc()
-            self.error.emit(err_msg, e, 0)
+            self.error.emit(err_msg, e, "Error", 0)
 
 
-
-# internet connection check
-def is_connected(hostname, isConnected: list):
-    import socket
-    try:
-        # see if we can do a dns lookup, return True if it can happen
-        host = socket.gethostbyname(hostname)
-        s = socket.create_connection((host, 80), 2)
-        s.close()
-        isConnected.value = True
-        return
-    except Exception:
-        pass # ignore errors and return False
-    isConnected.value = False
-    #return
 
 class ConfigThread(QThread):
     finished_signal = Signal(pray_data.Data, pray_data.AppConfig) # data obj
@@ -1146,6 +1173,7 @@ class ConfigThread(QThread):
             #dPrint("data made")
             if conf_file_exists:
                 data.setLocationMethod(2)
+                data.setTzMethod(1)
             else:
                 hostname = "one.one.one.one" # check for 1.1.1.1 to dns lookup
 

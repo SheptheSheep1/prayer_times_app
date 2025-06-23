@@ -112,7 +112,7 @@ class AppConfig:
         return{
             #"general":{"dark_mode": True, "utc_offset_timezone": -7.0},
             "general":{"dark_mode": True, "timezone_utc_offset": offset, "timezone_description": name},
-            "prayer_times":{"method_name": "From File: ISNA", "fajr_offset": 15.0, "isha_offset": 15.0, "maghrib_to_isha_90": False, "asr_method": 2},
+            "prayer_times":{"method_name": "Islamic Society of North America", "fajr_offset": 15.0, "isha_offset": 15.0, "maghrib_to_isha_90": False, "asr_method": 2},
             "location":{"latitude": 34.1434, "longitude": -111.123, "region_description": "Phoenix, AZ"}
         }
 
