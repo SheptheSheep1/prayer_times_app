@@ -6,6 +6,10 @@ from PySide6.QtCore import QThread, Qt, QTimer, QDate, QSize, QObject, Signal, S
 from PySide6.QtGui import QIcon, QMovie, QRegularExpressionValidator, QDoubleValidator, QValidator, QPixmap
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QDialog, QLineEdit, QComboBox, QGroupBox, QCheckBox, QDialogButtonBox, QRadioButton, QDialogButtonBox, QApplication, QButtonGroup, QToolTip, QSplashScreen, QMessageBox
+#from PySide6.QtCore import *
+#from PySide6.QtGui import *
+#from PySide6.QtSvgWidgets import *
+#from PySide6.QtWidgets import *
 import app as zapp
 from geopy.exc import GeocoderServiceError
 #import random
@@ -86,7 +90,7 @@ class MyWidget(QWidget):
                             }
                 QLabel#region{
                                 font-family: Helvetica;
-                                font-size: 22px;
+                                font-size: 18px;
                                 padding-right: 15px;
                                 padding-top: 10px;
                                 padding-bottom: 5px;
@@ -145,7 +149,7 @@ class MyWidget(QWidget):
                             }
                 QLabel#region{
                                 font-family: Helvetica;
-                                font-size: 22px;
+                                font-size: 18px;
                                 padding-right: 15px;
                                 padding-top: 10px;
                                 padding-bottom: 5px;
@@ -1235,13 +1239,14 @@ if __name__ == "__main__":
     #freeze_support()
 
     app = QApplication([])
+    print("..")
+    print("Running from:", os.getcwd())
     app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
     # Show splash screen
     pixmap = QPixmap(800,600)
     pixmap.fill("#262626")
     splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
     splash.showMessage("Configuring app...", Qt.AlignCenter, Qt.white)
-
     if not os.path.exists("config.toml"):
         splash.show()
 
@@ -1250,15 +1255,19 @@ if __name__ == "__main__":
 
     global data
     def on_init_finished(data_conf: pray_data.Data, appconfig: pray_data.AppConfig):
+        #basedir = os.path.dirname(os.path.abspath(__file__))
+        #icon_path = os.path.join(basedir, "resources/maruf_assets/maruf_icon.png")
         global data
         data = data_conf
         qdarktheme.setup_theme("dark")
         data.setDarkMode(True)
-        app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
+        #app.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
+        app.setWindowIcon(QIcon("/home/ibrahim/Documents/code/Personal/salah_app/salah_qt/resources/maruf_assets/maruf_icon.png"))
         
         # Store widget as app attribute to prevent garbage collection
         app.main_widget = MyWidget(data)
         app.main_widget.setWindowIcon(QIcon(resource_path("resources/maruf_assets/maruf_icon.png")))
+        #app.main_widget.setWindowIcon(QIcon())
         app.main_widget.setFixedSize(800, 600)
         app.main_widget.show()
         
