@@ -57,7 +57,7 @@ python3>=3.11
 git clone https://github.com/SheptheSheep1/prayer_times_app.git ./prayer_times_app
 cd ./prayer_times_app
 python3 -m venv venv
-source venv/bin/activate # for POSIX-compliant shell (e.g. bash/zsh)
+source venv/bin/activate # for POSIX-compatible shell (e.g. bash(mostly))
 pip install -r requirements.txt
 ```
 #### Running
