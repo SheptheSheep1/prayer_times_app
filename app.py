@@ -181,13 +181,13 @@ class Location:
     def getDescription(self):
         return self.description
 
-    def setLocationByIP(self):
+    def setLocationByIP(self, timeout=6):
         #import ssl
         #import certifi
         #self.__ssl_context = ssl.create_default_context(cafile=certifi.where())
         url = "http://ip-api.com/json/"
         try:
-            with urlopen(url) as response:
+            with urlopen(url, timeout=timeout) as response:
                 body = response.read()
         except Exception as e:
             raise e
@@ -201,7 +201,7 @@ class Location:
         self.description = desc
         #print(self.description)
     
-    def setLocationByQuery(self, query: str):
+    def setLocationByQuery(self, query: str, timeout=6):
         import ssl
         import certifi
         from geopy.geocoders import Nominatim
@@ -210,7 +210,7 @@ class Location:
 
         geolocator = Nominatim(user_agent='maruf', ssl_context=self.__ssl_context)
         # TODO: Actual exception handling
-        location = geolocator.geocode(query)
+        location = geolocator.geocode(query, timeout=6)
         if location is None:
             print("location is NoneType")
         #return (location.latitude, location.longitude, location.address)
@@ -218,6 +218,22 @@ class Location:
         self.longitude = location.longitude
         self.description = location.address
 
+    def setDescByIP(self, latitude, longitude, timeout=6):
+        import ssl
+        import certifi
+        from geopy.geocoders import Nominatim
+
+        self.__ssl_context = ssl.create_default_context(cafile=certifi.where())
+        geolocator = Nominatim(user_agent='maruf', ssl_context=self.__ssl_context)
+        print(f"timeout: {timeout}")
+
+        # Reverse Geocoding - lat/long to Address
+        description = geolocator.reverse((latitude, longitude), timeout=int(timeout)).address
+        self.description = description
+
+    def setDescriptionManually(self, description: str = "Custom Location"):
+        self.description = description
+        
     def setLocationManually(self, latitude, longitude):
         self.latitude = latitude
         self.longitude = longitude

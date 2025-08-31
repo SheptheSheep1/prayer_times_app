@@ -570,8 +570,9 @@ class MyWidget(QWidget):
                 if (self.data.getLocation().getLatitude()==float(self.dialog.latitude.text())) and (self.data.getLocation().getLongitude()==float(self.dialog.longitude.text())):
                     dPrint("loc manual not changed, keeping former...")
                 else:
-                    self.data.getLocation().setLocationManually(float(self.dialog.latitude.text()), float(self.dialog.longitude.text()))
-                    self.data.setLocationMethod(2)
+                    #self.data.getLocation().setLocationManually(float(self.dialog.latitude.text()), float(self.dialog.longitude.text()))
+                    #self.data.setLocationMethod(2)
+                    self.worker = WebRequestWorker("byHand", "", float(self.dialog.latitude.text()), float(self.dialog.longitude.text()))
 
 
                 dPrint("loc manual check")
@@ -628,19 +629,13 @@ class MyWidget(QWidget):
             self.loading_dialog = LoadingDialog(self)
             self.loading_dialog.show()
 
+            self.threadz.setObjectName("MyWorkerThread")
             self.worker.moveToThread(self.threadz)
             self.threadz.started.connect(self.worker.run)
             self.worker.error.connect(self.error_thread)
             self.worker.finished.connect(self.handle_result)
             self.worker.finishedTz.connect(self.handle_result_tz)
             self.worker.finished.connect(self.cleanup_thread)
-            #self.threadz.finished.connect(self.threadz.deleteLater)
-
-            self.timeout_timer = QTimer(self)
-            self.timeout_timer.setSingleShot(True)
-            self.timeout_timer.timeout.connect(self.timeout_thread)
-            self.timeout_timer.start(8000) # allow 8 seconds to finish
-            dPrint("started timer")
 
             self.threadz.start()
 
@@ -652,6 +647,7 @@ class MyWidget(QWidget):
         self.updateTimes()
         #self.__initUI()
         self.init_style()
+        self.loc_thread_done = True
     
     def cleanup_thread(self):
         dPrint("cleaning up threads...")
@@ -667,15 +663,8 @@ class MyWidget(QWidget):
         self.error_message(exception, error_title, message)
         dPrint("qthread error...keeping location from before save...")
         self.loading_dialog.hide()
-        self.timeout_timer.stop()
         self.threadz.quit()
-        self.threadz.wait()
-
-    def timeout_thread(self):
-        if self.loc_thread_done:
-            dPrint("loc timed out!")
-            self.threadz.quit()
-            self.threadz.wait()
+        #self.threadz.wait()
 
     def handle_result_tz(self, result, mode, query, hours, desc):
         self.loading_dialog.hide()
@@ -702,10 +691,6 @@ class MyWidget(QWidget):
         self.recalculateData()
         self.updateTimes()
         dPrint("location: ", self.data.getLocation())
-        self.threadz.quit()
-        self.threadz.wait()
-        self.worker.deleteLater()
-        self.threadz.deleteLater()
 
     def handle_result(self, result, mode, query):
         dPrint("handling result...")
@@ -719,6 +704,8 @@ class MyWidget(QWidget):
             self.data.setQuery(query)
         elif mode == "byIP":
             self.data.setLocationMethod(0)
+        elif mode == "byHand":
+            self.data.setLocationMethod(2)
         else:
             self.data.setLocationMethod(2)
         if self.data.getTzMethod() == 0:
@@ -732,10 +719,6 @@ class MyWidget(QWidget):
         dPrint(f"set: {self.data.getTzDesc()}")
         self.recalculateData()
         self.updateTimes()
-        self.threadz.quit()
-        self.threadz.wait()
-        self.worker.deleteLater()
-        self.threadz.deleteLater()
 
     def dialog_rejected(self):
         dPrint("rejected")
@@ -1120,19 +1103,32 @@ class WebRequestWorker(QObject):
         import traceback
         try:
             if self.mode == "byIP":
+                dPrint("setting by ip")
                 self.location.setLocationByIP()
                 self.finished.emit(self.location, self.mode, self.query)
             elif self.mode == "byIPLocTz":
+                dPrint("setting by ip tz")
                 self.location.setLocationByIP()
                 ipHours, ipDesc = pray_data.get_offset_name(lat=self.location.getLatitude(), lng=self.location.getLongitude())
                 self.finishedTz.emit(self.location, self.mode, self.query, ipHours, ipDesc)
             elif self.mode == "byQuery":
+                dPrint("setting by query")
                 self.location.setLocationByQuery(self.query)
                 self.finished.emit(self.location, self.mode, self.query)
             elif self.mode == "byQueryLocTz":
+                dPrint("setting by query loc, tz")
                 self.location.setLocationByQuery(self.query)
                 qHours, qDesc = pray_data.get_offset_name(lat=self.location.getLatitude(), lng=self.location.getLongitude())
                 self.finishedTz.emit(self.location, self.mode, self.query, qHours, qDesc)
+            elif self.mode == "byHand":
+                dPrint("setting by hand")
+                self.location.setLocationManually(self.lat, self.lng)
+                try:
+                    self.location.setDescByIP(self.lat, self.lng)
+                except GeocoderServiceError or URLError:
+                    dPrint("timeout")
+                    self.location.setDescriptionManually("Custom Location")
+                self.finished.emit(self.location, self.mode, self.query)
             elif self.mode == "LocTz":
                 mHours, mDesc = pray_data.get_offset_name(lat=self.lat, lng=self.lng)
                 self.finishedTz.emit(self.location, self.mode, self.query, mHours, mDesc)
@@ -1140,6 +1136,9 @@ class WebRequestWorker(QObject):
                 self.location = zapp.Location()
                 self.finished.emit(self.location, self.mode, self.query)
             #self.finished.emit(self.location, self.mode, self.query)
+        except TimeoutError as e:
+            err_msg = traceback.format_exc()
+            self.error.emit(err_msg, e, "Connection Timeout", 4)
         except ValueError as e:
             err_msg = traceback.format_exc()
             self.error.emit(err_msg, e, "Invalid Value", 3)

@@ -8,7 +8,7 @@ from timezonefinder import TimezoneFinderL
 from zoneinfo import ZoneInfo, available_timezones
 #from dateutil.relativedelta import relativedelta
 import timeit
-max_len_region_desc = 90
+max_len_region_desc = 59
 max_len_method_name = 50
 timezone_description = 80
 
