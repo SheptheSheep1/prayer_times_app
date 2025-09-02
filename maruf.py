@@ -655,6 +655,7 @@ class MyWidget(QWidget):
         self.threadz.wait()
         self.worker.deleteLater()
         self.threadz.deleteLater()
+        dPrint("threads cleaned up...")
 
     def error_thread(self, message, exception, error_title, index):
         dPrint(message)

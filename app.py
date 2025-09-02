@@ -1,5 +1,6 @@
 import math
 from datetime import datetime, timezone
+from re import split
 from typing import Dict
 from urllib.request import urlopen
 import time
@@ -169,7 +170,7 @@ class Location:
     def __init__(self, latitude=0.0, longitude=0.0, description="Custom"):
         self.latitude = latitude
         self.longitude = longitude
-        self.description = description
+        self.description = self.processAddress(description)
         self.__ssl_context = None
 
     def __str__(self):
@@ -198,7 +199,7 @@ class Location:
         #return (latitude, longitude, desc)
         self.latitude = latitude
         self.longitude = longitude
-        self.description = desc
+        self.description = self.processAddress(desc)
         #print(self.description)
     
     def setLocationByQuery(self, query: str, timeout=6):
@@ -213,10 +214,11 @@ class Location:
         location = geolocator.geocode(query, timeout=6)
         if location is None:
             print("location is NoneType")
+            raise ValueError("Invalid location")
         #return (location.latitude, location.longitude, location.address)
         self.latitude = location.latitude
         self.longitude = location.longitude
-        self.description = location.address
+        self.description = self.processAddress(location.address)
 
     def setDescByIP(self, latitude, longitude, timeout=6):
         import ssl
@@ -229,15 +231,22 @@ class Location:
 
         # Reverse Geocoding - lat/long to Address
         description = geolocator.reverse((latitude, longitude), timeout=int(timeout)).address
-        self.description = description
+        self.description = self.processAddress(description)
 
     def setDescriptionManually(self, description: str = "Custom Location"):
-        self.description = description
+        self.description = self.processAddress(description)
         
     def setLocationManually(self, latitude, longitude):
         self.latitude = latitude
         self.longitude = longitude
         self.description = "Custom Location"
+
+    def processAddress(self, address:str):
+        if len(address) >= 50:
+            print("jumbo")
+            split_address = address.split(",", -1)
+            address = split_address[1][1:] + "," + split_address[-3] + "," + split_address[-1]
+        return address
     
 def processQuery(query: str) -> str:
     import re
