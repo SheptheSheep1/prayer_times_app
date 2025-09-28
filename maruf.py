@@ -626,6 +626,7 @@ class MyWidget(QWidget):
                     self.data.setTzMethod(2)
 
         if self.worker is not None:
+            dPrint("worker is not none...")
             self.loading_dialog = LoadingDialog(self)
             self.loading_dialog.show()
 
@@ -635,6 +636,7 @@ class MyWidget(QWidget):
             self.worker.error.connect(self.error_thread)
             self.worker.finished.connect(self.handle_result)
             self.worker.finishedTz.connect(self.handle_result_tz)
+            self.worker.finishedTz.connect(self.cleanup_thread)
             self.worker.finished.connect(self.cleanup_thread)
 
             self.threadz.start()
@@ -1132,6 +1134,7 @@ class WebRequestWorker(QObject):
                 self.finished.emit(self.location, self.mode, self.query)
             elif self.mode == "LocTz":
                 mHours, mDesc = pray_data.get_offset_name(lat=self.lat, lng=self.lng)
+                dPrint(f"got: {mHours}{mDesc}")
                 self.finishedTz.emit(self.location, self.mode, self.query, mHours, mDesc)
             else:
                 self.location = zapp.Location()

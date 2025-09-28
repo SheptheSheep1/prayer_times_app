@@ -82,6 +82,14 @@ prayerTime = PrayerTime(7, 3, 2025, -6.0, CalcMethod(), 1, "Ding Dong, Texas, US
 prayerTime.putPrayerTimes()
 print(prayerTime)
 ```
+```
+fajr: 2025-07-03 03:54:44
+sunrise: 2025-07-03 05:33:10
+dhuhr: 2025-07-03 12:37:26
+asr: 2025-07-03 16:15:27
+maghrib: 2025-07-03 19:37:42
+isha: 2025-07-03 21:09:53
+```
 ### CLI
 #### Usage
 ```bash

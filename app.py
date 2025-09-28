@@ -524,7 +524,7 @@ class PrayerTime:
         retStr = ""
         for k, v in self.prayerTimes.items():
             retStr += f"\n{k}: {v}"
-        return retStr
+        return retStr[1:]
 
         #f"FAJR: {self.prayerTimes.get("fajr").strftime("%I:%M:%S %p")}"
         #        f"\nSUNRISE: {self.prayerTimes.get("sunrise").strftime("%I:%M:%S %p")}"
