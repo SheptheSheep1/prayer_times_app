@@ -81,7 +81,7 @@ jobs:
           enable-plugins: pyside6
           include-data-dir: |
             ${{ env.NUMPY_DIR }}/_core=numpy/_core
-            resources/maruf_assets=maruf_assets/resources
+            resources/maruf_assets=resources/maruf_assets
             ${{ env.TIMEZONEFINDER_DIR }}=timezonefinder
           include-data-files: |
             ${{ env.TIMEZONEFINDER_DIR }}/hole_adr2data.bin=timezonefinder/hole_adr2data.bin
